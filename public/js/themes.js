@@ -51,13 +51,13 @@ function updatePreviewTheme(theme) {
 
   const t = themes[theme] || themes.blue;
 
-  // Code block colors per theme
+  // Code block colors per theme - more vibrant and distinct
   const codeThemes = {
-    blue:   { bg: "#0a1929", header: "#071422", border: "#1a3a5c" },
-    red:    { bg: "#290a0a", header: "#1f0707", border: "#5c1b1b" },
-    green:  { bg: "#0a290f", header: "#071f0a", border: "#1b5c22" },
-    purple: { bg: "#1f0a29", header: "#17071f", border: "#3b1b5c" },
-    gold:   { bg: "#29200a", header: "#1f1707", border: "#5c4a1b" },
+    blue:   { bg: "#0d1f3c", header: "#0a1628", border: "#1e4d8c" },
+    red:    { bg: "#2c0f0f", header: "#200a0a", border: "#8c1e1e" },
+    green:  { bg: "#0f2c15", header: "#0a200e", border: "#1e8c2d" },
+    purple: { bg: "#1f0f2c", header: "#170a20", border: "#6b1e8c" },
+    gold:   { bg: "#2c200f", header: "#20170a", border: "#8c6b1e" },
   };
   const c = codeThemes[theme] || codeThemes.blue;
 
