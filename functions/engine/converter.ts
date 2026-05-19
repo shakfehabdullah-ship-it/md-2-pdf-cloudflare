@@ -2,7 +2,7 @@ import { marked } from "marked";
 import hljs from "highlight.js";
 import matter from "gray-matter";
 import puppeteer from "@cloudflare/puppeteer";
-import katex from "katex";
+import markedKatex from "marked-katex-extension";
 import plantumlEncoder from "plantuml-encoder";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -43,113 +43,38 @@ export interface ConversionResult {
 
 // ── Markdown → HTML ─────────────────────────────────────────────────────────
 
-const renderer = new marked.Renderer();
+// ── Configure marked with custom renderers (plain object, not Renderer instance) ──
+marked.use({
+  renderer: {
+    heading({ text, depth }: { text: string; depth: number }) {
+      const id = text
+        .toLowerCase()
+        .replace(/[^\w\u0621-\u064A]+/g, "-")
+        .replace(/^-|-$/g, "");
+      return `<h${depth} id="${id}">${text}</h${depth}>`;
+    },
+    code({ text, lang }: { text: string; lang?: string }) {
+      // PlantUML support - render as SVG diagram
+      if (lang === "plantuml" || lang === "uml") {
+        try {
+          const encoded = plantumlEncoder.encode(text);
+          const svgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+          return `<div class="plantuml-diagram"><div class="plantuml-header"><span class="plantuml-label">PlantUML</span></div><img src="${svgUrl}" alt="PlantUML Diagram" loading="lazy" onerror="this.outerHTML='<div class=\\'plantuml-error\\'>❌ فشل تحميل المخطط</div>'" /></div>`;
+        } catch {
+          return `<pre><code class="hljs">${text}</code></pre>`;
+        }
+      }
 
-renderer.heading = function ({ text, depth }: { text: string; depth: number }) {
-  const id = text
-    .toLowerCase()
-    .replace(/[^\w\u0621-\u064A]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `<h${depth} id="${id}">${text}</h${depth}>`;
-};
-
-renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-  // PlantUML support - render as SVG diagram
-  if (lang === "plantuml" || lang === "uml") {
-    try {
-      const encoded = plantumlEncoder.encode(text);
-      const svgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
-      return `<div class="plantuml-diagram"><div class="plantuml-header"><span class="plantuml-label">PlantUML</span></div><img src="${svgUrl}" alt="PlantUML Diagram" loading="lazy" onerror="this.outerHTML='<div class=\'plantuml-error\'>❌ فشل تحميل المخطط</div>'" /></div>`;
-    } catch {
-      return `<pre><code class="hljs">${text}</code></pre>`;
-    }
-  }
-
-  const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
-  const highlighted = hljs.highlight(text, { language }).value;
-  const langLabel = language !== "plaintext" ? language.toUpperCase() : "CODE";
-  return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-block-lang">${langLabel}</span></div><pre><code class="hljs language-${language}">${highlighted}</code></pre></div>`;
-};
-
-// ── KaTeX Extensions for marked (based on marked-katex-extension) ──────────
-// Block: $$\n...\n$$ (multiline display math on its own lines)
-// Inline: $...$ and $$...$$ (single-line inline or display)
-
-function katexRender(text: string, displayMode: boolean): string {
-  try {
-    const rendered = katex.renderToString(text, {
-      displayMode,
-      throwOnError: false,
-      output: "html",
-    });
-    if (displayMode) {
-      return `<div class="math-display">${rendered}</div>`;
-    }
-    return `<span class="math-inline">${rendered}</span>`;
-  } catch {
-    return `<code class="katex-error">${text}</code>`;
-  }
-}
-
-const blockKatex: marked.Extension = {
-  name: "blockKatex",
-  level: "block",
-  start(src: string) {
-    return src.match(/^\$\$/m)?.index ?? -1;
+      const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
+      const highlighted = hljs.highlight(text, { language }).value;
+      const langLabel = language !== "plaintext" ? language.toUpperCase() : "CODE";
+      return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-block-lang">${langLabel}</span></div><pre><code class="hljs language-${language}">${highlighted}</code></pre></div>`;
+    },
   },
-  tokenizer(src: string) {
-    // Match $$\n...\n$$ (block display math — $$ on their own lines)
-    const match = src.match(/^(\$\$)\n([\s\S]+?)\n\1(?:\n|$)/);
-    if (match) {
-      return {
-        type: "blockKatex",
-        raw: match[0],
-        text: match[2].trim(),
-        displayMode: true,
-      };
-    }
-    return undefined;
-  },
-  renderer(token: any) {
-    return katexRender(token.text, token.displayMode);
-  },
-};
+});
 
-const inlineKatex: marked.Extension = {
-  name: "inlineKatex",
-  level: "inline",
-  start(src: string) {
-    return src.indexOf("$");
-  },
-  tokenizer(src: string) {
-    // Match $$...$$ on a single line (display) — must check before $
-    const displayMatch = src.match(/^(\$\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
-    if (displayMatch) {
-      return {
-        type: "inlineKatex",
-        raw: displayMatch[0],
-        text: displayMatch[2].trim(),
-        displayMode: true,
-      };
-    }
-    // Match $...$ on a single line (inline)
-    const inlineMatch = src.match(/^(\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
-    if (inlineMatch) {
-      return {
-        type: "inlineKatex",
-        raw: inlineMatch[0],
-        text: inlineMatch[2].trim(),
-        displayMode: false,
-      };
-    }
-    return undefined;
-  },
-  renderer(token: any) {
-    return katexRender(token.text, token.displayMode);
-  },
-};
-
-marked.use({ extensions: [blockKatex, inlineKatex], renderer });
+// KaTeX support via official marked-katex-extension
+marked.use(markedKatex({ throwOnError: false, output: "html" }));
 
 /**
  * Parse markdown with frontmatter metadata
@@ -295,8 +220,6 @@ export function markdownToHtml(
     }
 
     /* KaTeX styling */
-    .math-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }
-    .math-inline { direction: ltr; display: inline-block; unicode-bidi: isolate; vertical-align: middle; }
     .katex-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
     .katex-display > .katex { text-align: center; }
     .katex { direction: ltr; }

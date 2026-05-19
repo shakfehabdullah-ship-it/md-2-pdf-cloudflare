@@ -1,6 +1,8 @@
 let currentMarkdown = '';
 let currentFilename = 'مستندي';
 let isServerRunning = false;
+let previewDebounceTimer = null;
+let isPreviewLoading = false;
 
 let markdownInput, preview, previewBtn, convertBtn, clearBtn, loadSampleBtn;
 let fileInput, selectFileBtn, filenameInput, statusMessage, uploadArea;
@@ -252,8 +254,48 @@ function loadSample() {
   updatePreview();
 }
 
+/**
+ * Extract body content from a full HTML document string.
+ * The server returns a complete HTML page — we only need the <body> content
+ * for the preview to avoid polluting the main page with embedded styles.
+ */
+function extractBodyContent(fullHtml) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(fullHtml, 'text/html');
+    const bodyContent = doc.body;
+    if (bodyContent) {
+      // Transfer embedded <style> sheets from the parsed doc into the preview
+      const styles = doc.querySelectorAll('style');
+      const fragment = document.createDocumentFragment();
+      styles.forEach(style => fragment.appendChild(style.cloneNode(true)));
+      const contentDiv = bodyContent.querySelector('.content') || bodyContent;
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(fragment);
+      // Move all child nodes from bodyContent (or .content) into wrapper
+      const source = bodyContent.querySelector('.content') || bodyContent;
+      while (source.firstChild) {
+        wrapper.appendChild(source.firstChild);
+      }
+      return wrapper.innerHTML;
+    }
+  } catch (e) {
+    // Fallback: return raw HTML
+  }
+  return fullHtml;
+}
+
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 async function updatePreview() {
   if (!preview || !markdownInput) return;
+  if (isPreviewLoading) return;
 
   const markdown = markdownInput.value.trim();
 
@@ -267,6 +309,7 @@ async function updatePreview() {
   }
 
   try {
+    isPreviewLoading = true;
     showStatus('🔄 جاري تحديث المعاينة...', 'loading');
 
     const response = await fetch('/api/parse', {
@@ -284,7 +327,8 @@ async function updatePreview() {
     const data = await response.json();
 
     if (data.success) {
-      preview.innerHTML = data.html;
+      // Extract body content to avoid injecting full <html>/<head> into a <div>
+      preview.innerHTML = extractBodyContent(data.html);
       currentMarkdown = markdown;
 
       // Add copy buttons to code blocks
@@ -309,6 +353,8 @@ async function updatePreview() {
       </div>
     `;
     showStatus(`❌ ${error.message}`, 'error');
+  } finally {
+    isPreviewLoading = false;
   }
 }
 
@@ -341,7 +387,6 @@ async function convertToPdf() {
     };
 
     // ── STEP 1: Try server-side PDF (Puppeteer via Browser Rendering) ──
-    // This produces the best quality PDF, same as the original project
     let serverPdfOk = false;
     try {
       const headers = { 'Content-Type': 'application/json' };
@@ -359,7 +404,6 @@ async function convertToPdf() {
       if (convertResponse.ok) {
         const convertData = await convertResponse.json();
         if (convertData.success && convertData.pdf) {
-          // ── Server PDF succeeded → download directly ──
           const binaryStr = atob(convertData.pdf);
           const bytes = new Uint8Array(binaryStr.length);
           for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
@@ -379,7 +423,6 @@ async function convertToPdf() {
           setTimeout(() => hideStatus(), 5000);
         }
       } else if (convertResponse.status === 429) {
-        // Rate limited → fall through to client-side fallback
         console.log('Server PDF rate-limited, falling back to client-side...');
       }
     } catch (serverErr) {
@@ -404,20 +447,43 @@ async function convertToPdf() {
       const safeFilename = finalFilename.replace(/'/g, "\\'");
 
       // Inject html2pdf + auto-PDF script into the full HTML document
-      // It runs INSIDE the correct document context so all CSS selectors work
       const pdfScriptTag = `
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>
 <script>
   window.addEventListener('load', async () => {
     try {
+      // Wait for fonts and external resources
       await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 1200));
+
+      // Ensure code blocks preserve whitespace for html2canvas
+      document.querySelectorAll('pre').forEach(pre => {
+        pre.style.whiteSpace = 'pre';
+        pre.style.overflow = 'visible';
+      });
 
       const opt = {
         margin: [10, 10, 15, 10],
         filename: '${safeFilename}.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: 794,
+          windowWidth: 794,
+          scrollY: 0,
+          onclone: function(clonedDoc) {
+            // Ensure code blocks render correctly in the clone
+            clonedDoc.querySelectorAll('pre').forEach(pre => {
+              pre.style.whiteSpace = 'pre';
+              pre.style.overflow = 'visible';
+            });
+            clonedDoc.querySelectorAll('.plantuml-diagram img').forEach(img => {
+              img.style.display = 'block';
+            });
+          }
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
@@ -567,6 +633,16 @@ function initEventListeners() {
   if (clearBtn) clearBtn.addEventListener('click', clearInput);
   if (loadSampleBtn) loadSampleBtn.addEventListener('click', loadSample);
 
+  // Auto-preview with debounce when typing
+  if (markdownInput) {
+    markdownInput.addEventListener('input', debounce(() => {
+      const md = markdownInput.value.trim();
+      if (md && md !== currentMarkdown) {
+        updatePreview();
+      }
+    }, 800));
+  }
+
   if (selectFileBtn) {
     selectFileBtn.addEventListener('click', () => {
       if (fileInput) fileInput.click();
@@ -599,7 +675,7 @@ function addCodeCopyButtons() {
 
   const headers = preview.querySelectorAll('.code-block-header');
   headers.forEach(header => {
-    if (header.querySelector('.code-block-copy')) return; // already added
+    if (header.querySelector('.code-block-copy')) return;
 
     const btn = document.createElement('button');
     btn.className = 'code-block-copy';
