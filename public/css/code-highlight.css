@@ -1,0 +1,193 @@
+/* Code Highlighting - highlight.js dark theme with LTR support */
+
+/* ═══ hljs token colors (GitHub Dark Dimmed style) ═══ */
+.hljs { color: #adbac7; background: transparent; }
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ { color: #f47067; }
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ { color: #dcbdfb; }
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-variable { color: #6cb6ff; }
+
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-string { color: #96d0ff; }
+
+.hljs-built_in,
+.hljs-symbol { color: #f69d50; }
+
+.hljs-code,
+.hljs-comment,
+.hljs-formula { color: #768390; }
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-pseudo,
+.hljs-selector-tag { color: #8ddb8c; }
+
+.hljs-subst { color: #adbac7; }
+
+.hljs-section { color: #316dca; font-weight: 700; }
+
+.hljs-bullet { color: #eac55f; }
+
+.hljs-emphasis { color: #adbac7; font-style: italic; }
+
+.hljs-strong { color: #adbac7; font-weight: 700; }
+
+.hljs-addition { color: #b4f1b4; background-color: #1b4721; }
+.hljs-deletion { color: #ffd8b3; background-color: #78191b; }
+
+/* ═══ Code block container ═══ */
+.preview-content pre {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  margin: 1em 0 !important;
+  overflow-x: auto !important;
+  direction: ltr !important;
+  text-align: left !important;
+  position: relative;
+  white-space: pre !important;
+}
+
+.preview-content pre code {
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  display: block !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+  white-space: pre !important;
+}
+
+/* ═══ Code header (language label + copy button) ═══ */
+.code-block-wrapper {
+  margin: 1em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  padding: 6px 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.code-block-lang {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.code-block-copy {
+  background: none;
+  border: 1px solid #334155;
+  color: #64748b;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  transition: all 0.2s;
+}
+
+.code-block-copy:hover {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+.code-block-copy.copied {
+  color: #4ade80;
+  border-color: #4ade80;
+}
+
+/* ═══ Inline code ═══ */
+.preview-content code:not(pre code) {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.88em;
+  direction: ltr;
+  unicode-bidi: embed;
+  border: 1px solid #334155;
+}
+
+/* ═══ Scrollbar ═══ */
+.preview-content pre::-webkit-scrollbar {
+  height: 6px;
+}
+.preview-content pre::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.preview-content pre::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+.preview-content pre::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ═══ PlantUML Diagrams ═══ */
+.preview-content .plantuml-diagram {
+  margin: 1em 0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafbfc;
+  text-align: center;
+  direction: ltr;
+}
+.preview-content .plantuml-header {
+  background: #0f172a;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+}
+.preview-content .plantuml-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.preview-content .plantuml-diagram img {
+  max-width: 100%;
+  padding: 16px;
+  display: block;
+  margin: 0 auto;
+}
+.preview-content .plantuml-error {
+  padding: 20px;
+  color: #dc2626;
+  text-align: center;
+  background: #fef2f2;
+}

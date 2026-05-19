@@ -1,0 +1,21 @@
+name = "md-2-pdf"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./public"
+
+[vars]
+ENVIRONMENT = "production"
+
+# ── D1 Database ──────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "md2pdf-db"
+database_id = "5b623cd0-f45f-4d71-8585-46904f62ed18"
+
+# ── Browser Rendering ────────────────────────────────────────────────────────
+[browser]
+binding = "MYBROWSER"
+
+# ── Development ──────────────────────────────────────────────────────────────
+[dev]
+port = 3000

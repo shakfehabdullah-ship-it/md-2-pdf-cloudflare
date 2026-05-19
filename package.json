@@ -1,0 +1,35 @@
+{
+  "name": "md-2-pdf-cloudflare",
+  "version": "2.0.0",
+  "description": "MD to PDF converter - Cloudflare Workers Edition",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute md2pdf-db --file=./src/db/schema.sql",
+    "db:migrate:local": "wrangler d1 execute md2pdf-db --local --file=./src/db/schema.sql",
+    "build": "npx wrangler deploy --dry-run --outdir=dist"
+  },
+  "dependencies": {
+    "@cloudflare/kv-asset-handler": "^0.5.0",
+    "@cloudflare/puppeteer": "^0.0.15",
+    "bcryptjs": "^3.0.3",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.11.1",
+    "hono": "^4.7.0",
+    "jsonwebtoken": "^9.0.3",
+    "katex": "^0.16.45",
+    "marked": "^17.0.5",
+    "marked-katex-extension": "^5.1.8",
+    "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "^4.4.168",
+    "plantuml-encoder": "^1.4.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250503.0",
+    "typescript": "^6.0.2",
+    "wrangler": "^4.18.0"
+  }
+}

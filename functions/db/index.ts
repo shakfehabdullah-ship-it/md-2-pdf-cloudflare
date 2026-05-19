@@ -1,0 +1,1 @@
+export { getDb, initializeDatabase } from "./database.js";
