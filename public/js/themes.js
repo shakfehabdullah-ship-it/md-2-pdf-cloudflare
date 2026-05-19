@@ -51,25 +51,31 @@ function updatePreviewTheme(theme) {
 
   const t = themes[theme] || themes.blue;
 
-  // Code block colors per theme (tinted background matching theme color)
+  // Code block colors per theme
   const codeThemes = {
-    blue:   { bg: "#0f1923", header: "#0d1520", border: "#1a3a5c" },
-    red:    { bg: "#200d0d", header: "#1a0a0a", border: "#5c1b1b" },
-    green:  { bg: "#0d1f12", header: "#0a1a0d", border: "#1b5c22" },
-    purple: { bg: "#1a0f20", header: "#150a1a", border: "#3b1b5c" },
-    gold:   { bg: "#201a0d", header: "#1a150a", border: "#5c4a1b" },
+    blue:   { bg: "#0a1929", header: "#071422", border: "#1a3a5c" },
+    red:    { bg: "#290a0a", header: "#1f0707", border: "#5c1b1b" },
+    green:  { bg: "#0a290f", header: "#071f0a", border: "#1b5c22" },
+    purple: { bg: "#1f0a29", header: "#17071f", border: "#3b1b5c" },
+    gold:   { bg: "#29200a", header: "#1f1707", border: "#5c4a1b" },
   };
   const c = codeThemes[theme] || codeThemes.blue;
+
+  // Set CSS variables directly on preview element
+  preview.style.setProperty("--primary", t.primary);
+  preview.style.setProperty("--code-bg", c.bg);
+  preview.style.setProperty("--code-header-bg", c.header);
+  preview.style.setProperty("--code-border", c.border);
+  preview.style.setProperty("--code-lang-color", t.primary + "99");
 
   // Remove old override
   const old = document.getElementById("theme-preview-override");
   if (old) old.remove();
 
-  // Inject override styles with !important to beat embedded converter styles
   const style = document.createElement("style");
   style.id = "theme-preview-override";
   style.textContent = `
-    :root { --primary: ${t.primary} !important; }
+    #preview { --primary: ${t.primary}; --code-bg: ${c.bg}; --code-header-bg: ${c.header}; --code-border: ${c.border}; }
     #preview th { background: ${t.primary} !important; color: #fff !important; }
     #preview tr:nth-child(even) { background: ${t.light} !important; }
     #preview tr:hover { background: ${t.hover} !important; }
@@ -81,14 +87,12 @@ function updatePreviewTheme(theme) {
     #preview .cover-page h1 { color: ${t.primary} !important; }
     #preview .cover-page .divider { background: ${t.primary} !important; }
     #preview code:not(pre code) { background: ${t.light} !important; color: ${t.primary} !important; border-color: ${t.primary}33 !important; }
-    #preview pre, #preview .preview-content pre { background: ${c.bg} !important; border-color: ${c.border} !important; }
-    #preview .code-block-wrapper, #preview .preview-content .code-block-wrapper { border-color: ${c.border} !important; }
+    #preview pre, #preview .preview-content pre, #preview .code-block-wrapper pre { background: ${c.bg} !important; border-color: ${c.border} !important; }
+    #preview .code-block-wrapper, #preview .preview-content .code-block-wrapper { border-color: ${c.border} !important; background: ${c.bg} !important; }
     #preview .code-block-header, #preview .preview-content .code-block-header { background: ${c.header} !important; border-color: ${c.border} !important; }
-    #preview .code-block-lang, #preview .preview-content .code-block-lang { color: ${t.primary}99 !important; }
-    #preview .code-block-copy, #preview .preview-content .code-block-copy { color: ${t.primary}77 !important; border-color: ${c.border} !important; }
-    #preview .code-block-copy:hover, #preview .preview-content .code-block-copy:hover { background: ${c.bg} !important; color: ${t.primary} !important; }
+    #preview .code-block-lang, #preview .preview-content .code-block-lang { color: ${t.primary} !important; }
     #preview .plantuml-header { background: ${c.header} !important; border-color: ${c.border} !important; }
-    #preview .plantuml-label { color: ${t.primary}99 !important; }
+    #preview .plantuml-label { color: ${t.primary} !important; }
     #preview .plantuml-diagram { border-color: ${c.border} !important; }
   `;
   document.head.appendChild(style);

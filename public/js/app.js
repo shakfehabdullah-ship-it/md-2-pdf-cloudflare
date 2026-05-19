@@ -265,19 +265,11 @@ function extractBodyContent(fullHtml) {
     const doc = parser.parseFromString(fullHtml, 'text/html');
     const bodyContent = doc.body;
     if (bodyContent) {
-      // Transfer embedded <style> sheets from the parsed doc into the preview
-      const styles = doc.querySelectorAll('style');
-      const fragment = document.createDocumentFragment();
-      styles.forEach(style => fragment.appendChild(style.cloneNode(true)));
-      const contentDiv = bodyContent.querySelector('.content') || bodyContent;
-      const wrapper = document.createElement('div');
-      wrapper.appendChild(fragment);
-      // Move all child nodes from bodyContent (or .content) into wrapper
+      // Don't transfer <style> tags from server HTML into preview
+      // Preview has its own CSS from code-highlight.css and style.css
+      // Server styles are only needed for PDF generation
       const source = bodyContent.querySelector('.content') || bodyContent;
-      while (source.firstChild) {
-        wrapper.appendChild(source.firstChild);
-      }
-      return wrapper.innerHTML;
+      return source.innerHTML;
     }
   } catch (e) {
     // Fallback: return raw HTML
