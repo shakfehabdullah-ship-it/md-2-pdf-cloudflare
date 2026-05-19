@@ -51,6 +51,16 @@ function updatePreviewTheme(theme) {
 
   const t = themes[theme] || themes.blue;
 
+  // Code block colors per theme (tinted background matching theme color)
+  const codeThemes = {
+    blue:   { bg: "#0f1923", header: "#0d1520", border: "#1a3a5c" },
+    red:    { bg: "#200d0d", header: "#1a0a0a", border: "#5c1b1b" },
+    green:  { bg: "#0d1f12", header: "#0a1a0d", border: "#1b5c22" },
+    purple: { bg: "#1a0f20", header: "#150a1a", border: "#3b1b5c" },
+    gold:   { bg: "#201a0d", header: "#1a150a", border: "#5c4a1b" },
+  };
+  const c = codeThemes[theme] || codeThemes.blue;
+
   // Remove old override
   const old = document.getElementById("theme-preview-override");
   if (old) old.remove();
@@ -70,7 +80,16 @@ function updatePreviewTheme(theme) {
     #preview hr { background: linear-gradient(to left, transparent, ${t.primary}, transparent) !important; }
     #preview .cover-page h1 { color: ${t.primary} !important; }
     #preview .cover-page .divider { background: ${t.primary} !important; }
-    #preview code:not(pre code) { background: ${t.light} !important; color: ${t.primary} !important; }
+    #preview code:not(pre code) { background: ${t.light} !important; color: ${t.primary} !important; border-color: ${t.primary}33 !important; }
+    #preview pre, #preview .preview-content pre { background: ${c.bg} !important; border-color: ${c.border} !important; }
+    #preview .code-block-wrapper, #preview .preview-content .code-block-wrapper { border-color: ${c.border} !important; }
+    #preview .code-block-header, #preview .preview-content .code-block-header { background: ${c.header} !important; border-color: ${c.border} !important; }
+    #preview .code-block-lang, #preview .preview-content .code-block-lang { color: ${t.primary}99 !important; }
+    #preview .code-block-copy, #preview .preview-content .code-block-copy { color: ${t.primary}77 !important; border-color: ${c.border} !important; }
+    #preview .code-block-copy:hover, #preview .preview-content .code-block-copy:hover { background: ${c.bg} !important; color: ${t.primary} !important; }
+    #preview .plantuml-header { background: ${c.header} !important; border-color: ${c.border} !important; }
+    #preview .plantuml-label { color: ${t.primary}99 !important; }
+    #preview .plantuml-diagram { border-color: ${c.border} !important; }
   `;
   document.head.appendChild(style);
 }
