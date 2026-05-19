@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx wrangler *)",
+      "Bash(npm install *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8788/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8787/)",
+      "Read(//c/Users/ABDALG~1/AppData/Local/Temp/claude/c--Users-Abdalgani-Desktop-md-2-pdf-cloudflare/006f1574-9d0f-4b0f-b508-f39594ed98cb/tasks/**)"
+    ]
+  }
+}

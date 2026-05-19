@@ -2,7 +2,7 @@ import { marked } from "marked";
 import hljs from "highlight.js";
 import matter from "gray-matter";
 import puppeteer from "@cloudflare/puppeteer";
-import markedKatex from "marked-katex-extension";
+import katex from "katex";
 import plantumlEncoder from "plantuml-encoder";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -43,18 +43,95 @@ export interface ConversionResult {
 
 // ── Markdown → HTML ─────────────────────────────────────────────────────────
 
-// ── Configure marked with custom renderers (plain object, not Renderer instance) ──
+// ── KaTeX rendering helper ─────────────────────────────────────────────────
+
+function katexRender(text: string, displayMode: boolean): string {
+  try {
+    const rendered = katex.renderToString(text, {
+      displayMode,
+      throwOnError: false,
+      output: "html",
+    });
+    if (displayMode) {
+      return `<div class="math-display">${rendered}</div>`;
+    }
+    return `<span class="math-inline">${rendered}</span>`;
+  } catch {
+    return `<code class="katex-error">${text}</code>`;
+  }
+}
+
+// ── KaTeX Extensions for marked ────────────────────────────────────────────
+// Block: $$\n...\n$$ (multiline display math on its own lines)
+// Inline: $...$ and $$...$$ (single-line inline or display)
+
+const blockKatex: marked.Extension = {
+  name: "blockKatex",
+  level: "block",
+  start(src: string) {
+    return src.match(/^\$\$/m)?.index ?? -1;
+  },
+  tokenizer(src: string) {
+    const match = src.match(/^(\$\$)\n([\s\S]+?)\n\1(?:\n|$)/);
+    if (match) {
+      return {
+        type: "blockKatex",
+        raw: match[0],
+        text: match[2].trim(),
+        displayMode: true,
+      };
+    }
+    return undefined;
+  },
+  renderer(token: any) {
+    return katexRender(token.text, token.displayMode);
+  },
+};
+
+const inlineKatex: marked.Extension = {
+  name: "inlineKatex",
+  level: "inline",
+  start(src: string) {
+    return src.indexOf("$");
+  },
+  tokenizer(src: string) {
+    const displayMatch = src.match(/^(\$\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
+    if (displayMatch) {
+      return {
+        type: "inlineKatex",
+        raw: displayMatch[0],
+        text: displayMatch[2].trim(),
+        displayMode: true,
+      };
+    }
+    const inlineMatch = src.match(/^(\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
+    if (inlineMatch) {
+      return {
+        type: "inlineKatex",
+        raw: inlineMatch[0],
+        text: inlineMatch[2].trim(),
+        displayMode: false,
+      };
+    }
+    return undefined;
+  },
+  renderer(token: any) {
+    return katexRender(token.text, token.displayMode);
+  },
+};
+
+// ── Configure marked (plain renderer object — NOT new Renderer() instance) ──
 marked.use({
+  extensions: [blockKatex, inlineKatex],
   renderer: {
     heading({ text, depth }: { text: string; depth: number }) {
       const id = text
         .toLowerCase()
-        .replace(/[^\w\u0621-\u064A]+/g, "-")
+        .replace(/[^\wء-ي]+/g, "-")
         .replace(/^-|-$/g, "");
       return `<h${depth} id="${id}">${text}</h${depth}>`;
     },
     code({ text, lang }: { text: string; lang?: string }) {
-      // PlantUML support - render as SVG diagram
       if (lang === "plantuml" || lang === "uml") {
         try {
           const encoded = plantumlEncoder.encode(text);
@@ -72,9 +149,6 @@ marked.use({
     },
   },
 });
-
-// KaTeX support via official marked-katex-extension
-marked.use(markedKatex({ throwOnError: false, output: "html" }));
 
 /**
  * Parse markdown with frontmatter metadata
@@ -220,6 +294,8 @@ export function markdownToHtml(
     }
 
     /* KaTeX styling */
+    .math-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }
+    .math-inline { direction: ltr; display: inline-block; unicode-bidi: isolate; vertical-align: middle; }
     .katex-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
     .katex-display > .katex { text-align: center; }
     .katex { direction: ltr; }

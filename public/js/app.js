@@ -39,7 +39,7 @@ function initTabs() {
   });
 }
 
-const sampleMarkdown = String.raw`# 📄 محول Markdown إلى PDF
+const sampleMarkdown = `# 📄 محول Markdown إلى PDF
 
 أداة احترافية لتحويل **Markdown** إلى **PDF** مع دعم كامل للغة العربية.
 
@@ -84,10 +84,10 @@ const sampleMarkdown = String.raw`# 📄 محول Markdown إلى PDF
 معادلة أينشتاين: $E = mc^2$
 
 معادلة عرضية:
-$$\int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$
+$$\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}$$
 
 مصفوفة:
-$$A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$$
+$$A = \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$$
 
 ---
 
