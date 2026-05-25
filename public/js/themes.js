@@ -109,7 +109,23 @@ function getThemeCss(theme) {
 
   const t = themes[theme] || themes.blue;
 
+  const codeThemes = {
+    blue:   { bg: "#0d1f3c", header: "#0a1628", border: "#1e4d8c" },
+    red:    { bg: "#2c0f0f", header: "#200a0a", border: "#8c1e1e" },
+    green:  { bg: "#0f2c15", header: "#0a200e", border: "#1e8c2d" },
+    purple: { bg: "#1f0f2c", header: "#170a20", border: "#6b1e8c" },
+    gold:   { bg: "#2c200f", header: "#20170a", border: "#8c6b1e" },
+  };
+  const c = codeThemes[theme] || codeThemes.blue;
+
   return `
+    :root {
+      --primary: ${t.primary} !important;
+      --code-bg: ${c.bg} !important;
+      --code-header-bg: ${c.header} !important;
+      --code-border: ${c.border} !important;
+      --code-lang-color: ${t.primary} !important;
+    }
     th { background: ${t.primary} !important; }
     tr:nth-child(even) { background: ${t.light} !important; }
     tr:hover { background: ${t.hover} !important; }

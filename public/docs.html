@@ -9,64 +9,131 @@
 <body>
   <div class="docs-container">
     <aside class="docs-sidebar">
-      <div class="sidebar-title">MD-2-PDF</div>
+      <div class="sidebar-title">📄 MD-2-PDF</div>
 
       <div class="sidebar-section">عام</div>
       <a href="#overview" class="active">نظرة عامة</a>
-      <a href="#auth">المصادقة</a>
       <a href="#features">المميزات</a>
+      <a href="#auth">المصادقة</a>
 
       <div class="sidebar-section">API</div>
       <a href="#health">GET /api/health</a>
       <a href="#convert">POST /api/convert</a>
+      <a href="#convert-base64">POST /api/convert/base64</a>
       <a href="#parse">POST /api/parse</a>
+      <a href="#auth-register">POST /api/auth/register</a>
+      <a href="#auth-login">POST /api/auth/login</a>
+      <a href="#auth-guest">POST /api/auth/guest</a>
       <a href="#history-api">GET /api/history</a>
 
       <div class="sidebar-section">أدوات MCP</div>
-      <a href="#mcp-tools">أدوات MCP</a>
+      <a href="#mcp-tools">أدوات MCP المتاحة</a>
       <a href="#mcp-setup">إعداد MCP</a>
+      <a href="#mcp-test">اختبار MCP</a>
 
       <div style="margin-top: 30px; padding: 0 16px;">
-        <a href="/" style="background: rgba(100,255,218,0.15); color: #64ffda; text-align: center;">العودة للرئيسية</a>
+        <a href="/" style="background: rgba(100,255,218,0.15); color: #64ffda; text-align: center; display:block;">🏠 العودة للرئيسية</a>
       </div>
     </aside>
 
     <main class="docs-main">
       <h1>توثيق API - MD-2-PDF v2.0</h1>
 
+      <!-- ═══════════════════ نظرة عامة ═══════════════════ -->
       <section id="overview">
         <h2>نظرة عامة</h2>
-        <p>MD-2-PDF هي أداة لتحويل نصوص Markdown إلى ملفات PDF مع دعم كامل للغة العربية (RTL) والمعادلات الرياضية (LaTeX).</p>
-        <p><strong>الرابط الأساسي:</strong> <code>https://md-2-pdf.pages.dev/api</code></p>
-        <p><strong>تنسيق الطلبات:</strong> JSON مع <code>Content-Type: application/json</code></p>
+        <p>MD-2-PDF هي أداة سحابية لتحويل نصوص Markdown إلى ملفات PDF احترافية مع دعم كامل للغة العربية (RTL)، المعادلات الرياضية (LaTeX)، تلوين الأكواد، ومخططات PlantUML.</p>
+
+        <div class="info-box primary">
+          <strong>الرابط الأساسي:</strong>
+          <code>https://md-2-pdf.pages.dev</code>
+        </div>
+
+        <h3>معلومات سريعة</h3>
+        <table class="params-table">
+          <tbody>
+            <tr><td><strong>الإصدار</strong></td><td>2.0.0</td></tr>
+            <tr><td><strong>المنصة</strong></td><td>Cloudflare Pages + Workers</td></tr>
+            <tr><td><strong>تنسيق الطلبات</strong></td><td>JSON (<code>Content-Type: application/json</code>)</td></tr>
+            <tr><td><strong>البروتوكول</strong></td><td>HTTPS فقط</td></tr>
+            <tr><td><strong>رمز المصدر</strong></td><td><a href="https://github.com/shakfehabdullah-ship-it/md-2-pdf-cloudflare" target="_blank">GitHub Repository</a></td></tr>
+          </tbody>
+        </table>
       </section>
 
-      <section id="auth">
-        <h2>المصادقة</h2>
-        <p>معظم نقاط النهاية تعمل بدون مصادقة. لحفظ السجلات، يمكنك:</p>
-        <ul>
-          <li><strong>تسجيل الدخول:</strong> إرسال JWT token عبر <code>Authorization: Bearer &lt;token&gt;</code></li>
-          <li><strong>ضيف:</strong> إرسال معرف الجلسة عبر <code>X-Guest-Session: &lt;id&gt;</code></li>
-        </ul>
-      </section>
-
+      <!-- ═══════════════════ المميزات ═══════════════════ -->
       <section id="features">
         <h2>المميزات</h2>
-        <ul>
-          <li>✅ دعم كامل للغة العربية واتجاه RTL</li>
-          <li>✅ معادلات LaTeX الرياضية (<code>$x^2$</code> و <code>$$\frac{1}{2}$$</code>)</li>
-          <li>✅ تلوين الأكواد البرمجية (Syntax Highlighting)</li>
-          <li>✅ YAML Frontmatter لبيانات المستند</li>
-          <li>✅ صفحة غلاف تلقائية</li>
-          <li>✅ ثيمات متعددة (blue, red, green, purple, gold)</li>
-          <li>✅ أدوات MCP للذكاء الاصطناعي</li>
-          <li>✅ تحويل مزدوج: خادم (Puppeteer) + عميل (html2pdf)</li>
-        </ul>
+        <div class="features-grid">
+          <div class="feature-card">
+            <span class="feature-icon">🔤</span>
+            <strong>دعم RTL</strong>
+            <p>دعم كامل للغة العربية والاتجاه من اليمين لليسار</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📐</span>
+            <strong>LaTeX</strong>
+            <p>معادلات رياضية سطرية (<code>$x^2$</code>) وعرضية (<code>$$...$$</code>)</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🎨</span>
+            <strong>تلوين الأكواد</strong>
+            <p>Syntax Highlighting لـ JavaScript, Python, CSS, SQL وأكثر</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <strong>PlantUML</strong>
+            <p>مخططات تسلسلية، فئات، وتدفق مباشرة في المستند</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🎭</span>
+            <strong>ثيمات متعددة</strong>
+            <p>5 ثيمات: أزرق، أحمر، أخضر، بنفسجي، ذهبي</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">📄</span>
+            <strong>صفحة غلاف</strong>
+            <p>صفحة غلاف تلقائية مع عنوان، مؤلف، وتاريخ</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">⚙️</span>
+            <strong>Frontmatter</strong>
+            <p>YAML Frontmatter لبيانات المستند الوصفية</p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon">🤖</span>
+            <strong>MCP</strong>
+            <p>أدوات MCP للتكامل مع Claude, Gemini, Codex وأكثر</p>
+          </div>
+        </div>
       </section>
 
+      <!-- ═══════════════════ المصادقة ═══════════════════ -->
+      <section id="auth">
+        <h2>المصادقة</h2>
+        <p>معظم نقاط النهاية تعمل <strong>بدون مصادقة</strong>. لتسجيل السجلات واستخدام التاريخ:</p>
+
+        <table class="params-table">
+          <thead>
+            <tr><th>الطريقة</th><th>التفاصيل</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>JWT Token</code></td>
+              <td>إرسال عبر <code>Authorization: Bearer &lt;token&gt;</code></td>
+            </tr>
+            <tr>
+              <td><code>Guest Session</code></td>
+              <td>إرسال عبر <code>X-Guest-Session: &lt;id&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ═══════════════════ GET /api/health ═══════════════════ -->
       <section id="health">
         <h2>GET /api/health <span class="endpoint-badge get">GET</span></h2>
-        <p>فحص صحة الخادم والتحقق من أنه يعمل.</p>
+        <p>فحص صحة الخادم — يتأكد إنو الخدمة شغالة.</p>
 
         <h3>مثال الطلب</h3>
         <div class="code-block">
@@ -74,14 +141,15 @@
           <pre><code>curl https://md-2-pdf.pages.dev/api/health</code></pre>
         </div>
 
-        <h3>مثال الاستجابة</h3>
+        <h3>الاستجابة</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
           <pre><code>{
   "status": "ok",
   "service": "md-2-pdf",
   "version": "2.0.0",
-  "timestamp": "2026-01-01T00:00:00.000Z"
+  "platform": "cloudflare-pages",
+  "timestamp": "2026-05-20T00:00:00.000Z"
 }</code></pre>
         </div>
 
@@ -89,9 +157,10 @@
         <div class="try-result"><pre></pre></div>
       </section>
 
+      <!-- ═══════════════════ POST /api/convert ═══════════════════ -->
       <section id="convert">
         <h2>POST /api/convert <span class="endpoint-badge post">POST</span></h2>
-        <p>تحويل نص Markdown إلى ملف PDF. يعيد PDF بصيغة base64 داخل JSON.</p>
+        <p>تحويل نص Markdown إلى ملف PDF. يعيد الملف بصيغة base64 داخل JSON.</p>
 
         <h3>المعاملات</h3>
         <table class="params-table">
@@ -99,15 +168,15 @@
             <tr><th>المعامل</th><th>النوع</th><th>مطلوب</th><th>الوصف</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>markdown</code></td><td>string</td><td>نعم</td><td>نص Markdown للتحويل</td></tr>
-            <tr><td><code>options.title</code></td><td>string</td><td>لا</td><td>عنوان المستند</td></tr>
-            <tr><td><code>options.pageSize</code></td><td>string</td><td>لا</td><td>A4 | Letter | Legal (افتراضي: A4)</td></tr>
-            <tr><td><code>options.orientation</code></td><td>string</td><td>لا</td><td>portrait | landscape</td></tr>
-            <tr><td><code>options.css</code></td><td>string</td><td>لا</td><td>CSS مخصص يُحقن في PDF</td></tr>
-            <tr><td><code>options.fontSize</code></td><td>number</td><td>لا</td><td>حجم الخط (افتراضي: 10)</td></tr>
-            <tr><td><code>options.fontFamily</code></td><td>string</td><td>لا</td><td>عائلة الخط</td></tr>
-            <tr><td><code>options.theme</code></td><td>string</td><td>لا</td><td>اسم الثيم (blue, red, green, purple, gold)</td></tr>
-            <tr><td><code>options.rtl</code></td><td>boolean</td><td>لا</td><td>اتجاه RTL (افتراضي: true)</td></tr>
+            <tr><td><code>markdown</code></td><td>string</td><td>✅ نعم</td><td>نص Markdown للتحويل</td></tr>
+            <tr><td><code>options.title</code></td><td>string</td><td>❌ لا</td><td>عنوان المستند (يظهر بصفحة الغلاف)</td></tr>
+            <tr><td><code>options.author</code></td><td>string</td><td>❌ لا</td><td>اسم المؤلف</td></tr>
+            <tr><td><code>options.pageSize</code></td><td>string</td><td>❌ لا</td><td>A4 | Letter | Legal (افتراضي: A4)</td></tr>
+            <tr><td><code>options.orientation</code></td><td>string</td><td>❌ لا</td><td>portrait | landscape</td></tr>
+            <tr><td><code>options.fontSize</code></td><td>number</td><td>❌ لا</td><td>حجم الخط بالبكسل (افتراضي: 10)</td></tr>
+            <tr><td><code>options.fontFamily</code></td><td>string</td><td>❌ لا</td><td>عائلة الخط</td></tr>
+            <tr><td><code>options.css</code></td><td>string</td><td>❌ لا</td><td>CSS مخصص يُحقن في PDF</td></tr>
+            <tr><td><code>options.margin</code></td><td>object</td><td>❌ لا</td><td>الهوامش: <code>{top, right, bottom, left}</code> (مثال: <code>"20mm"</code>)</td></tr>
           </tbody>
         </table>
 
@@ -116,45 +185,155 @@
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
           <pre><code>curl -X POST https://md-2-pdf.pages.dev/api/convert \
   -H "Content-Type: application/json" \
-  -d '{"markdown": "# مرحباً بالعالم\nهذا **نص** تجريبي.\n\nمعادلة: $E = mc^2$", "options": {"title": "مستندي"}}'</code></pre>
+  -d '{
+    "markdown": "# مرحباً بالعالم\n\nهذا **نص** تجريبي.\n\nمعادلة: $E = mc^2$\n\n```javascript\nconsole.log(\"Hello\");\n```",
+    "options": {
+      "title": "مستندي",
+      "pageSize": "A4"
+    }
+  }'</code></pre>
         </div>
 
-        <h3>مثال الاستجابة</h3>
+        <h3>الاستجابة (نجاح)</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
           <pre><code>{
   "success": true,
-  "message": "Conversion successful",
-  "metadata": { "title": "مستندي", "createdAt": "..." },
-  "pdf": "JVBERi0xLjQK..."
+  "pdf": "JVBERi0xLjQK...",
+  "metadata": {
+    "title": "مستندي",
+    "createdAt": "2026-05-20T00:00:00.000Z"
+  }
 }</code></pre>
         </div>
 
-        <button class="try-btn" onclick="tryEndpoint(this, 'POST', '/api/convert', {markdown: '# مرحباً\nهذا **نص** تجريبي.\n\nمعادلة: $E = mc^2$', options: {title: 'مستند تجريبي'}})">🧪 جرّب الآن</button>
+        <h3>الاستجابة (خطأ - تجاوز الحد)</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>{
+  "success": false,
+  "error": "تم تجاوز حد التحويل اليومي...",
+  "fallback": true,
+  "html": "&lt;html&gt;...",
+  "metadata": { ... }
+}</code></pre>
+        </div>
+
+        <div class="info-box warning">
+          <strong>⚠️ ملاحظة:</strong> حقل <code>pdf</code> يحتوي على ملف PDF كامل بصيغة base64. استخدم <code>atob()</code> في JavaScript أو <code>base64 -d</code> في الطرفية لاستخراج الملف.
+        </div>
+
+        <button class="try-btn" onclick="tryEndpoint(this, 'POST', '/api/convert', {markdown: '# مرحباً بالعالم\n\nهذا **نص** تجريبي.\n\nمعادلة: $E = mc^2$', options: {title: 'مستند تجريبي'}})">🧪 جرّب الآن</button>
         <div class="try-result"><pre></pre></div>
       </section>
 
+      <!-- ═══════════════════ POST /api/convert/base64 ═══════════════════ -->
+      <section id="convert-base64">
+        <h2>POST /api/convert/base64 <span class="endpoint-badge post">POST</span></h2>
+        <p>مثل <code>/api/convert</code> لكن يعيد الـ base64 بحقل اسمه <code>pdfBase64</code> بدل <code>pdf</code>.</p>
+
+        <h3>الاستجابة</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>{
+  "success": true,
+  "pdfBase64": "JVBERi0xLjQK...",
+  "metadata": { ... }
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ POST /api/parse ═══════════════════ -->
       <section id="parse">
         <h2>POST /api/parse <span class="endpoint-badge post">POST</span></h2>
-        <p>تحليل Markdown واستخراج البيانات الوصفية مع معاينة HTML.</p>
+        <p>تحليل Markdown واستخراج البيانات الوصفية + معاينة HTML. <strong>لا ينشئ PDF</strong>.</p>
+
+        <h3>المعاملات</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>المعامل</th><th>النوع</th><th>مطلوب</th><th>الوصف</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>markdown</code></td><td>string</td><td>✅ نعم</td><td>نص Markdown للتحليل</td></tr>
+            <tr><td><code>options</code></td><td>object</td><td>❌ لا</td><td>خيارات التحويل (نفس convert)</td></tr>
+          </tbody>
+        </table>
 
         <h3>مثال الطلب</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
           <pre><code>curl -X POST https://md-2-pdf.pages.dev/api/parse \
   -H "Content-Type: application/json" \
-  -d '{"markdown": "---\ntitle: مستندي\nauthor: أحمد\n---\n# مرحباً"}'</code></pre>
+  -d '{
+    "markdown": "---\ntitle: مستندي\nauthor: أحمد\n---\n\n# مرحباً\n\n**نص عريض** مع `كود`"
+  }'</code></pre>
         </div>
 
-        <button class="try-btn" onclick="tryEndpoint(this, 'POST', '/api/parse', {markdown: '---\ntitle: Test\n---\n# Hello\n\nSome **bold** text.'})">🧪 جرّب الآن</button>
+        <h3>الاستجابة</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>{
+  "success": true,
+  "html": "&lt;!DOCTYPE html&gt;&lt;html lang=\"ar\" dir=\"rtl\"&gt;...",
+  "metadata": {
+    "title": "مستندي",
+    "author": "أحمد",
+    "createdAt": "2026-05-20T00:00:00.000Z"
+  }
+}</code></pre>
+        </div>
+
+        <button class="try-btn" onclick="tryEndpoint(this, 'POST', '/api/parse', {markdown: '---\ntitle: Test\nauthor: Abdullah\n---\n\n# Hello\n\nSome **bold** text.\n\n```python\nprint(\"hi\")\n```'})">🧪 جرّب الآن</button>
         <div class="try-result"><pre></pre></div>
       </section>
 
+      <!-- ═══════════════════ POST /api/auth/register ═══════════════════ -->
+      <section id="auth-register">
+        <h2>POST /api/auth/register <span class="endpoint-badge post">POST</span></h2>
+        <p>تسجيل حساب جديد لحفظ السجلات.</p>
+
+        <h3>المعاملات</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>المعامل</th><th>النوع</th><th>مطلوب</th><th>الوصف</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>username</code></td><td>string</td><td>✅ نعم</td><td>اسم المستخدم</td></tr>
+            <tr><td><code>email</code></td><td>string</td><td>✅ نعم</td><td>البريد الإلكتروني</td></tr>
+            <tr><td><code>password</code></td><td>string</td><td>✅ نعم</td><td>كلمة المرور</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ═══════════════════ POST /api/auth/login ═══════════════════ -->
+      <section id="auth-login">
+        <h2>POST /api/auth/login <span class="endpoint-badge post">POST</span></h2>
+        <p>تسجيل الدخول والحصول على JWT token.</p>
+
+        <h3>المعاملات</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>المعامل</th><th>النوع</th><th>مطلوب</th><th>الوصف</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>email</code></td><td>string</td><td>✅ نعم</td><td>البريد الإلكتروني</td></tr>
+            <tr><td><code>password</code></td><td>string</td><td>✅ نعم</td><td>كلمة المرور</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ═══════════════════ POST /api/auth/guest ═══════════════════ -->
+      <section id="auth-guest">
+        <h2>POST /api/auth/guest <span class="endpoint-badge post">POST</span></h2>
+        <p>إنشاء جلسة ضيف بدون تسجيل — يكفي لإرسال معرف الجلسة لاحقاً.</p>
+      </section>
+
+      <!-- ═══════════════════ GET /api/history ═══════════════════ -->
       <section id="history-api">
         <h2>GET /api/history <span class="endpoint-badge get">GET</span></h2>
         <p>جلب سجلات المستندات المحفوظة. يتطلب مصادقة (JWT أو Guest Session).</p>
 
-        <h3>المعاملات (Query)</h3>
+        <h3>المعاملات (Query String)</h3>
         <table class="params-table">
           <thead>
             <tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr>
@@ -165,36 +344,79 @@
             <tr><td><code>search</code></td><td>string</td><td>بحث في العناوين</td></tr>
           </tbody>
         </table>
+
+        <h3>مثال الطلب</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>curl https://md-2-pdf.pages.dev/api/history?limit=10 \
+  -H "Authorization: Bearer &lt;token&gt;"</code></pre>
+        </div>
       </section>
 
+      <!-- ═══════════════════ أدوات MCP ═══════════════════ -->
       <section id="mcp-tools">
-        <h2>أدوات MCP المتاحة</h2>
-        <p>خادم MCP يوفر الأدوات التالية للذكاء الاصطناعي:</p>
+        <h2>🤖 أدوات MCP المتاحة</h2>
+        <p>خادم MCP يوفر 3 أدوات للذكاء الاصطناعي لتحويل Markdown إلى PDF مباشرة:</p>
 
-        <table class="params-table">
-          <thead>
-            <tr><th>الأداة</th><th>الوصف</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>convert-markdown-to-pdf</code></td><td>تحويل نص Markdown إلى PDF</td></tr>
-            <tr><td><code>convert-markdown-file-to-pdf</code></td><td>تحويل ملف Markdown إلى PDF</td></tr>
-            <tr><td><code>parse-markdown-metadata</code></td><td>استخراج البيانات الوصفية من Markdown</td></tr>
-          </tbody>
-        </table>
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">convert-markdown-to-pdf</span>
+            <span class="mcp-tool-badge">تحويل مباشر</span>
+          </div>
+          <p>تحويل نص Markdown إلى ملف PDF.</p>
+          <table class="params-table compact">
+            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
+            <tbody>
+              <tr><td><code>markdown</code></td><td>string</td><td>نص Markdown (مطلوب)</td></tr>
+              <tr><td><code>title</code></td><td>string</td><td>عنوان المستند</td></tr>
+              <tr><td><code>pageSize</code></td><td>string</td><td>A4 | Letter | Legal</td></tr>
+              <tr><td><code>filename</code></td><td>string</td><td>اسم الملف الناتج</td></tr>
+            </tbody>
+          </table>
+        </div>
 
-        <p style="margin-top: 16px;">خادم MCP يعمل محلياً عبر <strong>stdio</strong> ويحوّل الطلبات تلقائياً إلى <code>https://md-2-pdf.pages.dev/api</code>.</p>
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">convert-markdown-file-to-pdf</span>
+            <span class="mcp-tool-badge">ملف</span>
+          </div>
+          <p>قراءة ملف Markdown من القرص وتحويله إلى PDF.</p>
+          <table class="params-table compact">
+            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
+            <tbody>
+              <tr><td><code>filePath</code></td><td>string</td><td>مسار الملف (مطلوب)</td></tr>
+              <tr><td><code>title</code></td><td>string</td><td>عنوان المستند</td></tr>
+              <tr><td><code>pageSize</code></td><td>string</td><td>A4 | Letter | Legal</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">parse-markdown-metadata</span>
+            <span class="mcp-tool-badge">تحليل</span>
+          </div>
+          <p>استخراج البيانات الوصفية (Frontmatter) من Markdown بدون تحويل.</p>
+          <table class="params-table compact">
+            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
+            <tbody>
+              <tr><td><code>markdown</code></td><td>string</td><td>نص Markdown (مطلوب)</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
+      <!-- ═══════════════════ إعداد MCP ═══════════════════ -->
       <section id="mcp-setup">
-        <h2>إعداد MCP</h2>
-        <p>إعدادات MCP الجاهزة لكل أداة. انسخ الإعداد المناسب وأضفه لملف إعدادات الأداة.</p>
+        <h2>⚙️ إعداد MCP</h2>
+        <p>انسخ الإعداد المناسب لأداتك وأضفه لملف الإعدادات:</p>
 
-        <div style="margin-bottom: 20px; padding: 16px; background: #e3f2fd; border-radius: 8px; border-right: 4px solid #1a56db;">
-          <p style="margin: 0;"><strong>قبل البدء:</strong> ثبّت المشروع محلياً:</p>
-          <div class="code-block" style="margin-top: 8px;">
+        <div class="info-box primary" style="margin-bottom: 20px;">
+          <strong>قبل البدء:</strong> ثبّت المشروع محلياً:
+          <div class="code-block" style="margin-top: 8px; margin-bottom: 0;">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-            <pre><code>git clone https://github.com/your-user/md-2-pdf.git
-cd md-2-pdf
+            <pre><code>git clone https://github.com/shakfehabdullah-ship-it/md-2-pdf-cloudflare.git
+cd md-2-pdf-cloudflare
 npm install
 npm run build</code></pre>
           </div>
@@ -217,14 +439,14 @@ npm run build</code></pre>
         </div>
 
         <div class="mcp-card claude">
-          <h3><span class="mcp-icon" style="background:#3498db">C</span> Claude Code</h3>
+          <h3><span class="mcp-icon" style="background:#d97706">C</span> Claude Code</h3>
           <div class="config-path">سطر الأوامر أو ~/.config/claude/mcp.json</div>
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
             <pre><code># عبر الأمر
 claude mcp add md-2-pdf -- node &lt;md-2-pdf-path&gt;/dist/mcp/server.js
 
-# أو في ملف الإعدادات ~/.config/claude/mcp.json
+# أو يدوياً في ~/.config/claude/mcp.json
 {
   "mcpServers": {
     "md-2-pdf": {
@@ -325,8 +547,54 @@ args = ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]</code></pre>
           </div>
         </div>
 
-        <div style="margin-top: 30px; padding: 16px; background: #fff8e1; border-radius: 8px; border-right: 4px solid #f39c12;">
-          <p style="color: #856404; margin: 0;"><strong>ملاحظة:</strong> استبدل <code>&lt;md-2-pdf-path&gt;</code> بمسار المشروع على جهازك. خادم MCP يحوّل الطلبات تلقائياً إلى <code>https://md-2-pdf.pages.dev/api</code> — لا حاجة لتشغيل خادم محلي.</p>
+        <div class="info-box warning" style="margin-top: 20px;">
+          <strong>⚠️ ملاحظة:</strong> استبدل <code>&lt;md-2-pdf-path&gt;</code> بالمسار الفعلي على جهازك. خادم MCP يحوّل الطلبات تلقائياً إلى <code>https://md-2-pdf.pages.dev/api</code> — لا حاجة لتشغيل خادم محلي.
+        </div>
+      </section>
+
+      <!-- ═══════════════════ اختبار MCP ═══════════════════ -->
+      <section id="mcp-test">
+        <h2>🧪 اختبار MCP</h2>
+        <p>بعد إعداد MCP، يمكنك اختباره بإرسال طلب JSON-RPC مباشرة:</p>
+
+        <h3>اختبار عبر stdin</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node &lt;md-2-pdf-path&gt;/dist/mcp/server.js</code></pre>
+        </div>
+
+        <h3>النتيجة المتوقعة</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "convert-markdown-to-pdf",
+        "description": "تحويل نص Markdown إلى PDF",
+        "inputSchema": { ... }
+      },
+      {
+        "name": "convert-markdown-file-to-pdf",
+        "description": "تحويل ملف Markdown إلى PDF",
+        "inputSchema": { ... }
+      },
+      {
+        "name": "parse-markdown-metadata",
+        "description": "استخراج البيانات الوصفية من Markdown",
+        "inputSchema": { ... }
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <h3>اختبار تحويل مباشر</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+          <pre><code>echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"convert-markdown-to-pdf","arguments":{"markdown":"# Test\nHello **world**!","title":"Test Document"}}}' | node &lt;md-2-pdf-path&gt;/dist/mcp/server.js</code></pre>
         </div>
       </section>
     </main>

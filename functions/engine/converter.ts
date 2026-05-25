@@ -41,9 +41,7 @@ export interface ConversionResult {
   error?: string;
 }
 
-// ── Markdown → HTML ─────────────────────────────────────────────────────────
-
-// ── KaTeX rendering helper ─────────────────────────────────────────────────
+// ── KaTeX rendering helper ──────────────────────────────────────────────────
 
 function katexRender(text: string, displayMode: boolean): string {
   try {
@@ -61,9 +59,7 @@ function katexRender(text: string, displayMode: boolean): string {
   }
 }
 
-// ── KaTeX Extensions for marked ────────────────────────────────────────────
-// Block: $$\n...\n$$ (multiline display math on its own lines)
-// Inline: $...$ and $$...$$ (single-line inline or display)
+// ── KaTeX Extensions for marked ─────────────────────────────────────────────
 
 const blockKatex: marked.Extension = {
   name: "blockKatex",
@@ -120,7 +116,7 @@ const inlineKatex: marked.Extension = {
   },
 };
 
-// ── Configure marked (plain renderer object — NOT new Renderer() instance) ──
+// ── Configure marked ────────────────────────────────────────────────────────
 marked.use({
   extensions: [blockKatex, inlineKatex],
   renderer: {
@@ -133,13 +129,10 @@ marked.use({
     },
     code({ text, lang }: { text: string; lang?: string }) {
       if (lang === "plantuml" || lang === "uml") {
-        try {
-          const encoded = plantumlEncoder.encode(text);
-          const svgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
-          return `<div class="plantuml-diagram"><div class="plantuml-header"><span class="plantuml-label">PlantUML</span></div><img src="${svgUrl}" alt="PlantUML Diagram" loading="lazy" onerror="this.outerHTML='<div class=\\'plantuml-error\\'>❌ فشل تحميل المخطط</div>'" /></div>`;
-        } catch {
-          return `<pre><code class="hljs">${text}</code></pre>`;
-        }
+        const encoded = plantumlEncoder.encode(text);
+        const svgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+        // Use img for preview, we'll resolve to inline SVG for PDF
+        return `<div class="plantuml-diagram"><div class="plantuml-header"><span class="plantuml-label">PlantUML</span></div><img src="${svgUrl}" alt="PlantUML Diagram" /></div>`;
       }
 
       const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
@@ -168,6 +161,40 @@ export function parseMarkdown(markdownContent: string): {
   };
 
   return { metadata, content };
+}
+
+/**
+ * Resolve PlantUML diagrams - fetch SVGs and replace <img> with inline SVG for PDF
+ */
+async function resolvePlantumlDiagrams(html: string): Promise<string> {
+  const imgRegex = /<img src="(https:\/\/www\.plantuml\.com\/plantuml\/svg\/[^\s"]+)"[^>]*>/g;
+  const matches = [...html.matchAll(imgRegex)];
+
+  if (matches.length === 0) return html;
+
+  const fetches = matches.map(async (match) => {
+    const fullMatch = match[0];
+    const url = match[1];
+    try {
+      const response = await fetch(url, {
+        headers: { "Accept": "image/svg+xml" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (response.ok) {
+        let svg = await response.text();
+        svg = svg.replace(/<svg/, '<svg style="max-width:100%;height:auto;"');
+        return { original: fullMatch, replacement: svg };
+      }
+    } catch {}
+    return { original: fullMatch, replacement: fullMatch };
+  });
+
+  const results = await Promise.all(fetches);
+  let resolved = html;
+  for (const { original, replacement } of results) {
+    resolved = resolved.replace(original, replacement);
+  }
+  return resolved;
 }
 
 /**
@@ -203,7 +230,11 @@ export function markdownToHtml(
       --primary: #1a56db;
       --text: #1f2937;
       --bg: #ffffff;
-      --code-bg: #f8fafc;
+      --code-bg: #1e293b;
+      --code-header-bg: #0f172a;
+      --code-border: #334155;
+      --code-text: #adbac7;
+      --code-lang-color: #64748b;
       --border: #e5e7eb;
       --heading-color: #111827;
     }
@@ -229,7 +260,7 @@ export function markdownToHtml(
     .cover-page .meta-info { color: #6b7280; font-size: 1.1em; margin-top: 10px; }
     .cover-page .divider { width: 120px; height: 3px; background: var(--primary); margin: 30px auto; border-radius: 2px; }
 
-    h1, h2, h3, h4, h5, h6 { color: var(--heading-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; line-height: 1.3; }
+    h1, h2, h3, h4, h5, h6 { color: var(--heading-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; line-height: 1.3; page-break-after: avoid; }
     h1 { font-size: 1.8em; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
     h2 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
     h3 { font-size: 1.25em; }
@@ -243,7 +274,7 @@ export function markdownToHtml(
     ul, ol { margin: 0.8em 0; padding-right: 2em; }
     li { margin-bottom: 0.4em; }
 
-    pre { background: var(--code-bg, #1e293b); border-radius: 8px; padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 1em 0; border: 1px solid var(--code-border, #334155); }
+    pre { background: var(--code-bg, #1e293b); border-radius: 8px; padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 0; border: none; white-space: pre; }
     pre code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.9em; color: var(--code-text, #adbac7); background: transparent; }
 
     /* highlight.js token colors (GitHub Dark Dimmed) */
@@ -261,23 +292,24 @@ export function markdownToHtml(
     .hljs-deletion { color: #ffd8b3; background-color: #78191b; }
 
     /* Code block wrapper with header */
-    .code-block-wrapper { margin: 1em 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--code-border, #334155); }
+    .code-block-wrapper { margin: 1em 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--code-border, #334155); background: var(--code-bg, #1e293b); page-break-inside: avoid; break-inside: avoid; }
     .code-block-wrapper pre { margin: 0; border: none; border-radius: 0; }
     .code-block-header { display: flex; justify-content: space-between; align-items: center; background: var(--code-header-bg, #0f172a); padding: 6px 12px; border-bottom: 1px solid var(--code-border, #334155); }
     .code-block-lang { font-size: 11px; color: var(--code-lang-color, #64748b); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* PlantUML diagrams */
-    .plantuml-diagram { margin: 1em 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fafbfc; text-align: center; direction: ltr; }
+    .plantuml-diagram { margin: 1em 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fafbfc; text-align: center; direction: ltr; page-break-inside: avoid; break-inside: avoid; }
     .plantuml-header { background: var(--code-header-bg, #1e293b); padding: 6px 12px; display: flex; align-items: center; }
     .plantuml-label { font-size: 11px; color: var(--code-lang-color, #64748b); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .plantuml-diagram img { max-width: 100%; padding: 16px; display: block; margin: 0 auto; }
+    .plantuml-content { padding: 16px; }
+    .plantuml-content svg { max-width: 100%; height: auto; }
     .plantuml-error { padding: 20px; color: #dc2626; text-align: center; }
     code { font-family: 'Fira Code', 'Courier New', monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #dc2626; border: 1px solid var(--border); }
 
     blockquote { border-right: 4px solid var(--primary); margin: 1em 0; padding: 12px 20px; background: #eff6ff; border-radius: 0 8px 8px 0; color: #374151; }
     blockquote p:last-child { margin-bottom: 0; }
 
-    table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; }
+    table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; page-break-inside: avoid; break-inside: avoid; }
     th { background: var(--primary); color: white; font-weight: 600; padding: 12px 15px; text-align: right; }
     td { padding: 10px 15px; border-bottom: 1px solid var(--border); }
     tr:nth-child(even) { background: #f9fafb; }
@@ -286,10 +318,13 @@ export function markdownToHtml(
     hr { border: none; height: 2px; background: linear-gradient(to left, transparent, var(--primary), transparent); margin: 2em 0; }
     img { max-width: 100%; border-radius: 8px; margin: 1em auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
+    /* Keep headings with their following content */
+    h1 + *, h2 + *, h3 + * { page-break-before: avoid; break-before: avoid; }
+
     @media print {
       body { padding: 0; }
-      pre { page-break-inside: avoid; }
-      h1, h2, h3 { page-break-after: avoid; }
+      .code-block-wrapper, .plantuml-diagram, table { page-break-inside: avoid; break-inside: avoid; }
+      h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
       img { page-break-inside: avoid; }
     }
 
@@ -382,7 +417,11 @@ export async function convertMarkdownToPdf(
 ): Promise<ConversionResult> {
   try {
     const { metadata, content } = parseMarkdown(markdown);
-    const html = markdownToHtml(content, metadata, options);
+    let html = markdownToHtml(content, metadata, options);
+
+    // Resolve PlantUML diagrams (fetch SVGs server-side)
+    html = await resolvePlantumlDiagrams(html);
+
     const pdfUint8 = await htmlToPdf(html, options, browserBinding);
 
     return {
