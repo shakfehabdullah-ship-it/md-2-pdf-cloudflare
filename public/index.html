@@ -25,6 +25,14 @@
       </div>
       <h1>📄 محول Markdown إلى PDF</h1>
       <p class="subtitle">مع دعم كامل للغة العربية والاتجاه من اليمين لليسار</p>
+      <div class="direction-section">
+        <span class="direction-label">📐 اتجاه النص:</span>
+        <div class="direction-buttons">
+          <button class="dir-btn active" data-dir="rtl" title="من اليمين لليسار">◀️ RTL</button>
+          <button class="dir-btn" data-dir="hybrid" title="هجين - عربي RTL + أكواد LTR">🔀 هجين</button>
+          <button class="dir-btn" data-dir="ltr" title="من اليسار لليمين">▶️ LTR</button>
+        </div>
+      </div>
     </header>
 
     <div id="authModal" class="modal" hidden>
@@ -84,10 +92,17 @@
         </div>
 
         <div id="uploadTab" class="tab-content">
-          <div class="upload-area">
-            <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
-            <button id="selectFileBtn" class="btn btn-primary">📁 اختيار ملف</button>
-            <p class="upload-hint">أو اسحب ملف Markdown هنا</p>
+          <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept=".md,.markdown,.txt" multiple hidden>
+            <button id="selectFileBtn" class="btn btn-primary">📁 اختيار ملفات</button>
+            <p class="upload-hint">أو اسحب ملفات Markdown هنا (يمكنك رفع عدة ملفات)</p>
+          </div>
+          <div id="filePages" class="file-pages" hidden>
+            <div class="file-pages-header">
+              <span class="file-pages-title">📄 الملفات المرفوعة</span>
+              <button class="btn btn-secondary btn-small" id="clearFilesBtn">🗑️ مسح الكل</button>
+            </div>
+            <div class="file-pages-nav" id="filePagesNav"></div>
           </div>
         </div>
 

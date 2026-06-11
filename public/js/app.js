@@ -3,6 +3,9 @@ let currentFilename = 'مستندي';
 let isServerRunning = false;
 let previewDebounceTimer = null;
 let isPreviewLoading = false;
+let currentDirection = 'rtl'; // rtl | ltr | hybrid
+let uploadedFiles = []; // [{name, content}]
+let activeFileIndex = 0;
 
 let markdownInput, preview, previewBtn, convertBtn, clearBtn, loadSampleBtn;
 let fileInput, selectFileBtn, filenameInput, statusMessage, uploadArea;
@@ -202,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeElements();
   initTabs();
   initEventListeners();
+  initDirectionButtons();
   checkServerStatus();
   restoreFromHistory();
 
@@ -353,167 +357,109 @@ async function updatePreview() {
 async function convertToPdf() {
   if (!markdownInput) return;
 
-  const markdown = markdownInput.value.trim();
+  // Save current file content
+  saveCurrentFile();
 
-  if (!markdown) {
+  const filesToConvert = uploadedFiles.length > 0
+    ? uploadedFiles
+    : [{ name: filenameInput ? filenameInput.value.trim() || 'مستندي' : 'مستندي', content: markdownInput.value.trim() }];
+
+  // Validate
+  const emptyFiles = filesToConvert.filter(f => !f.content.trim());
+  if (emptyFiles.length === filesToConvert.length) {
     showStatus('⚠️ الرجاء إدخال نص Markdown أولاً', 'error');
     return;
   }
 
-  const filename = filenameInput ? filenameInput.value.trim() : 'مستندي';
-  const finalFilename = filename || 'مستندي';
+  const validFiles = filesToConvert.filter(f => f.content.trim());
 
   try {
-    showStatus('⏳ جاري إنشاء PDF...', 'loading');
     if (convertBtn) convertBtn.disabled = true;
+    showStatus(`⏳ جاري إنشاء PDF لـ ${validFiles.length} ملف...`, 'loading');
 
     const themeCss = typeof getThemeCss === 'function'
       ? getThemeCss(currentTheme || 'blue')
       : '';
 
-    const convertOptions = {
-      title: finalFilename,
-      rtl: true,
-      css: themeCss,
-      theme: currentTheme || 'blue',
-    };
+    let successCount = 0;
 
-    // ── STEP 1: Try server-side PDF (Puppeteer via Browser Rendering) ──
-    let serverPdfOk = false;
-    try {
-      const headers = { 'Content-Type': 'application/json' };
-      const state = typeof getAuthState === 'function' ? getAuthState() : {};
-      if (state.isGuest && state.guestSession) {
-        headers['x-guest-session'] = state.guestSession;
-      }
-
-      const convertResponse = await fetch('/api/convert', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ markdown, options: convertOptions }),
-      });
-
-      if (convertResponse.ok) {
-        const convertData = await convertResponse.json();
-        if (convertData.success && convertData.pdf) {
-          const binaryStr = atob(convertData.pdf);
-          const bytes = new Uint8Array(binaryStr.length);
-          for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-
-          const blob = new Blob([bytes], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${finalFilename}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-
-          serverPdfOk = true;
-          showStatus('✅ تم إنشاء PDF بنجاح!', 'success');
-          setTimeout(() => hideStatus(), 5000);
-        }
-      } else if (convertResponse.status === 429) {
-        console.log('Server PDF rate-limited, falling back to client-side...');
-      }
-    } catch (serverErr) {
-      console.log('Server PDF failed, falling back to client-side:', serverErr.message);
-    }
-
-    // ── STEP 2: Client-side fallback using iframe + html2pdf ──
-    if (!serverPdfOk) {
-      showStatus('⏳ جاري إنشاء PDF (جانب العميل)...', 'loading');
-
-      const parseResponse = await fetch('/api/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown, options: convertOptions }),
-      });
-
-      if (!parseResponse.ok) throw new Error('فشل في تحليل النص');
-      const parseData = await parseResponse.json();
-      if (!parseData.success) throw new Error(parseData.error || 'فشل في التحليل');
-
-      const fullHtml = parseData.html;
-      const safeFilename = finalFilename.replace(/'/g, "\\'");
-
-      // Inject html2pdf + auto-PDF script into the full HTML document
-      const pdfScriptTag = `
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>
-<script>
-  window.addEventListener('load', async () => {
-    try {
-      // Wait for fonts and external resources
-      await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 1200));
-
-      // Ensure code blocks preserve whitespace for html2canvas
-      document.querySelectorAll('pre').forEach(pre => {
-        pre.style.whiteSpace = 'pre';
-        pre.style.overflow = 'visible';
-      });
-
-      const opt = {
-        margin: [10, 10, 15, 10],
-        filename: '${safeFilename}.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          width: 794,
-          windowWidth: 794,
-          scrollY: 0,
-          onclone: function(clonedDoc) {
-            // Ensure code blocks render correctly in the clone
-            clonedDoc.querySelectorAll('pre').forEach(pre => {
-              pre.style.whiteSpace = 'pre';
-              pre.style.overflow = 'visible';
-            });
-            clonedDoc.querySelectorAll('.plantuml-diagram img').forEach(img => {
-              img.style.display = 'block';
-            });
-          }
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      const convertOptions = {
+        title: file.name,
+        rtl: currentDirection === 'rtl' || currentDirection === 'hybrid',
+        direction: currentDirection,
+        css: themeCss,
+        theme: currentTheme || 'blue',
       };
 
-      await html2pdf().set(opt).from(document.body).save();
-    } catch (e) {
-      console.error('Client PDF error:', e);
+      showStatus(`⏳ جاري إنشاء PDF (${i + 1}/${validFiles.length}): ${file.name}...`, 'loading');
+
+      let serverPdfOk = false;
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const state = typeof getAuthState === 'function' ? getAuthState() : {};
+        if (state.isGuest && state.guestSession) {
+          headers['x-guest-session'] = state.guestSession;
+        }
+
+        const convertResponse = await fetch('/api/convert', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ markdown: file.content, options: convertOptions }),
+        });
+
+        if (convertResponse.ok) {
+          const convertData = await convertResponse.json();
+          if (convertData.success && convertData.pdf) {
+            const binaryStr = atob(convertData.pdf);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
+
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${file.name}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            serverPdfOk = true;
+            successCount++;
+
+            // Small delay between downloads so browser doesn't block them
+            if (validFiles.length > 1) await new Promise(r => setTimeout(r, 800));
+          }
+        }
+      } catch (serverErr) {
+        console.log(`Server PDF failed for ${file.name}:`, serverErr.message);
+      }
+
+      // Fallback: client-side
+      if (!serverPdfOk) {
+        await convertSingleFileClientSide(file, convertOptions);
+        successCount++;
+        if (validFiles.length > 1) await new Promise(r => setTimeout(r, 800));
+      }
     }
-  });
-<\/script>`;
 
-      const modifiedHtml = fullHtml.replace('</body>', pdfScriptTag + '</body>');
+    showStatus(`✅ تم إنشاء ${successCount} ملف PDF بنجاح!`, 'success');
+    setTimeout(() => hideStatus(), 5000);
 
-      // Use a hidden iframe so the PDF script runs in the correct document context
-      const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'position:fixed; top:0; left:0; width:800px; height:1200px; opacity:0; z-index:-9999; border:none;';
-      iframe.srcdoc = modifiedHtml;
-      document.body.appendChild(iframe);
-
-      // Clean up iframe after enough time for PDF generation
-      setTimeout(() => {
-        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-      }, 30000);
-
-      showStatus('✅ يتم إنشاء PDF - سيتم التحميل تلقائياً...', 'success');
-      setTimeout(() => hideStatus(), 8000);
-    }
-
-    // ── Save to history ──
+    // Save to history
     const state = typeof getAuthState === 'function' ? getAuthState() : {};
     if (typeof saveGuestRecord === 'function' && state.isGuest) {
-      saveGuestRecord({
-        title: finalFilename,
-        filename: `${finalFilename}.pdf`,
-        markdown_content: markdown,
-        markdown_size: markdown.length,
-        theme: currentTheme || 'blue',
-      });
+      for (const file of validFiles) {
+        saveGuestRecord({
+          title: file.name,
+          filename: `${file.name}.pdf`,
+          markdown_content: file.content,
+          markdown_size: file.content.length,
+          theme: currentTheme || 'blue',
+        });
+      }
     }
   } catch (error) {
     console.error('PDF generation error:', error);
@@ -521,6 +467,52 @@ async function convertToPdf() {
   } finally {
     if (convertBtn) convertBtn.disabled = false;
   }
+}
+
+async function convertSingleFileClientSide(file, convertOptions) {
+  const parseResponse = await fetch('/api/parse', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markdown: file.content, options: convertOptions }),
+  });
+
+  if (!parseResponse.ok) throw new Error('فشل في تحليل النص');
+  const parseData = await parseResponse.json();
+  if (!parseData.success) throw new Error(parseData.error || 'فشل في التحليل');
+
+  const fullHtml = parseData.html;
+  const safeFilename = file.name.replace(/'/g, "\\'");
+
+  const pdfScriptTag = `
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>
+<script>
+  window.addEventListener('load', async () => {
+    try {
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 1200));
+      document.querySelectorAll('pre').forEach(pre => {
+        pre.style.whiteSpace = 'pre';
+        pre.style.overflow = 'visible';
+      });
+      const opt = {
+        margin: [10, 10, 15, 10],
+        filename: '${safeFilename}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      };
+      await html2pdf().set(opt).from(document.body).save();
+    } catch (e) { console.error('Client PDF error:', e); }
+  });
+<\/script>`;
+
+  const modifiedHtml = fullHtml.replace('</body>', pdfScriptTag + '</body>');
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed; top:0; left:0; width:800px; height:1200px; opacity:0; z-index:-9999; border:none;';
+  iframe.srcdoc = modifiedHtml;
+  document.body.appendChild(iframe);
+  setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 30000);
 }
 
 function clearInput() {
@@ -540,10 +532,90 @@ function clearInput() {
 }
 
 function handleFileSelect(event) {
-  const file = event.target.files[0];
-  if (file) {
-    readFile(file);
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
+
+  let loadCount = 0;
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      const name = file.name.replace(/\.[^/.]+$/, '');
+      uploadedFiles.push({ name, content });
+      loadCount++;
+
+      if (loadCount === files.length) {
+        // All files loaded
+        activeFileIndex = 0;
+        renderFilePages();
+        loadFileToEditor(0);
+        showStatus(`✅ تم تحميل ${files.length} ملف${files.length > 1 ? 'ات' : ''}`, 'success');
+        setTimeout(() => hideStatus(), 3000);
+      }
+    };
+    reader.onerror = () => {
+      loadCount++;
+      showStatus(`❌ فشل قراءة: ${file.name}`, 'error');
+    };
+    reader.readAsText(file);
+  });
+
+  // Reset input so same files can be re-selected
+  event.target.value = '';
+}
+
+function renderFilePages() {
+  const container = document.getElementById('filePages');
+  const nav = document.getElementById('filePagesNav');
+  if (!container || !nav) return;
+
+  if (uploadedFiles.length === 0) {
+    container.hidden = true;
+    return;
   }
+
+  container.hidden = false;
+  nav.innerHTML = '';
+
+  uploadedFiles.forEach((file, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'file-page-btn' + (idx === activeFileIndex ? ' active' : '');
+    btn.innerHTML = `<span class="page-num">${idx + 1}</span> ${file.name}`;
+    btn.title = file.name;
+    btn.addEventListener('click', () => {
+      saveCurrentFile();
+      activeFileIndex = idx;
+      loadFileToEditor(idx);
+      renderFilePages();
+    });
+    nav.appendChild(btn);
+  });
+}
+
+function loadFileToEditor(idx) {
+  if (!uploadedFiles[idx] || !markdownInput || !filenameInput) return;
+  const file = uploadedFiles[idx];
+  markdownInput.value = file.content;
+  currentMarkdown = file.content;
+  filenameInput.value = file.name;
+  currentFilename = file.name;
+  updatePreview();
+}
+
+function saveCurrentFile() {
+  if (uploadedFiles.length === 0 || !markdownInput) return;
+  uploadedFiles[activeFileIndex].content = markdownInput.value;
+}
+
+function clearAllFiles() {
+  uploadedFiles = [];
+  activeFileIndex = 0;
+  if (markdownInput) markdownInput.value = '';
+  if (filenameInput) filenameInput.value = 'مستندي';
+  currentMarkdown = '';
+  currentFilename = 'مستندي';
+  renderFilePages();
+  updatePreview();
 }
 
 function readFile(file) {
@@ -559,6 +631,11 @@ function readFile(file) {
     const name = file.name.replace(/\.[^/.]+$/, '');
     filenameInput.value = name;
     currentFilename = name;
+
+    // Also add to uploadedFiles
+    uploadedFiles = [{ name, content }];
+    activeFileIndex = 0;
+    renderFilePages();
 
     updatePreview();
 
@@ -589,15 +666,38 @@ function initDragDrop() {
     e.preventDefault();
     uploadArea.classList.remove('drag-over');
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['md', 'markdown', 'txt'].includes(ext)) {
-        readFile(file);
-      } else {
-        showStatus('⚠️ الرجاء اختيار ملف Markdown (.md)', 'error');
-      }
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    const validFiles = files.filter(f => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return ['md', 'markdown', 'txt'].includes(ext);
+    });
+
+    if (validFiles.length === 0) {
+      showStatus('⚠️ الرجاء اختيار ملفات Markdown (.md)', 'error');
+      return;
     }
+
+    let loadCount = 0;
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target.result;
+        const name = file.name.replace(/\.[^/.]+$/, '');
+        uploadedFiles.push({ name, content });
+        loadCount++;
+
+        if (loadCount === validFiles.length) {
+          activeFileIndex = 0;
+          renderFilePages();
+          loadFileToEditor(0);
+          showStatus(`✅ تم تحميل ${validFiles.length} ملف${validFiles.length > 1 ? 'ات' : ''}`, 'success');
+          setTimeout(() => hideStatus(), 3000);
+        }
+      };
+      reader.readAsText(file);
+    });
   });
 }
 
@@ -617,6 +717,33 @@ function showStatus(message, type) {
 function hideStatus() {
   if (!statusMessage) return;
   statusMessage.className = 'status-message';
+}
+
+function initDirectionButtons() {
+  const dirBtns = document.querySelectorAll('.dir-btn');
+  dirBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      dirBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentDirection = btn.getAttribute('data-dir');
+
+      // Update textarea direction
+      if (markdownInput) {
+        if (currentDirection === 'rtl') {
+          markdownInput.dir = 'rtl';
+        } else if (currentDirection === 'ltr') {
+          markdownInput.dir = 'ltr';
+        } else {
+          markdownInput.dir = 'auto';
+        }
+      }
+
+      // Update preview if there's content
+      if (currentMarkdown) {
+        updatePreview();
+      }
+    });
+  });
 }
 
 function initEventListeners() {
@@ -658,6 +785,12 @@ function initEventListeners() {
   });
 
   initDragDrop();
+
+  // Clear all files button
+  const clearFilesBtn = document.getElementById('clearFilesBtn');
+  if (clearFilesBtn) {
+    clearFilesBtn.addEventListener('click', clearAllFiles);
+  }
 }
 
 // Add copy buttons to code blocks in preview

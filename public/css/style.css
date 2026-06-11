@@ -676,3 +676,122 @@ body {
   text-decoration: none;
   display: inline-block;
 }
+
+/* ── Direction Buttons ─────────────────────────────────────── */
+.direction-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.direction-label {
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.95em;
+}
+
+.direction-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.dir-btn {
+  padding: 8px 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dir-btn:hover {
+  background: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.5);
+}
+
+.dir-btn.active {
+  background: white;
+  color: var(--primary-color);
+  border-color: white;
+}
+
+/* ── File Pages Navigation ─────────────────────────────────── */
+.file-pages {
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.file-pages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-pages-title {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.btn-small {
+  padding: 4px 12px;
+  font-size: 0.8em;
+}
+
+.file-pages-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.file-page-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-page-btn:hover {
+  border-color: var(--primary-color);
+  background: #f0f7ff;
+}
+
+.file-page-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.file-page-btn .page-num {
+  display: inline-block;
+  background: rgba(0,0,0,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.file-page-btn.active .page-num {
+  background: rgba(255,255,255,0.25);
+}

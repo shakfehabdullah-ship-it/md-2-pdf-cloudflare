@@ -31,6 +31,7 @@ export interface ConversionOptions {
   css?: string;
   title?: string;
   rtl?: boolean;
+  direction?: "rtl" | "ltr" | "hybrid";
   theme?: string;
 }
 
@@ -216,8 +217,20 @@ export function markdownToHtml(
 
   const customCss = options.css || "";
 
+  // Determine direction
+  const dir = options.direction || (options.rtl ? "rtl" : "rtl");
+  const htmlDir = dir === "ltr" ? "ltr" : "rtl"; // hybrid and rtl both use rtl base
+  const bodyDir = dir === "ltr" ? "ltr" : "rtl";
+  const textAlign = dir === "ltr" ? "left" : "right";
+
+  // Hybrid CSS: RTL base but LTR for paragraphs that start with Latin
+  const hybridCss = dir === "hybrid" ? `
+    p, li, td, th, blockquote { unicode-bidi: plaintext; direction: auto; text-align: auto; }
+    h1, h2, h3, h4, h5, h6 { unicode-bidi: plaintext; direction: auto; text-align: auto; }
+  ` : "";
+
   return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="${htmlDir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -247,8 +260,8 @@ export function markdownToHtml(
       line-height: 1.8;
       color: var(--text);
       background: var(--bg);
-      direction: rtl;
-      text-align: right;
+      direction: ${bodyDir};
+      text-align: ${textAlign};
       padding: 0;
     }
 
@@ -335,6 +348,8 @@ export function markdownToHtml(
     .katex-display > .katex { text-align: center; }
     .katex { direction: ltr; }
     .katex-error { color: #dc2626; background: #fef2f2; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; direction: ltr; display: inline-block; }
+
+    ${hybridCss}
 
     ${customCss}
   </style>
