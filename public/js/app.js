@@ -354,6 +354,27 @@ async function updatePreview() {
   }
 }
 
+/**
+ * Trigger a file download from a Blob, robustly.
+ * Revoking the object URL is deferred (not done synchronously after click)
+ * because an immediate revoke can cancel the download in some browsers,
+ * producing a 0-byte file with a garbled name.
+ */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    if (a.parentNode) a.parentNode.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 2000);
+}
+
 async function convertToPdf() {
   if (!markdownInput) return;
 
@@ -416,15 +437,16 @@ async function convertToPdf() {
             const bytes = new Uint8Array(binaryStr.length);
             for (let j = 0; j < binaryStr.length; j++) bytes[j] = binaryStr.charCodeAt(j);
 
+            // Sanity check: a real PDF starts with "%PDF". Guard against empty
+            // or corrupt payloads that would otherwise download as a 0-byte file.
+            const isPdf = bytes.length > 4 &&
+              bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+            if (!isPdf) {
+              throw new Error('استجابة PDF غير صالحة من الخادم');
+            }
+
             const blob = new Blob([bytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${file.name}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${file.name}.pdf`);
 
             serverPdfOk = true;
             successCount++;
@@ -439,8 +461,13 @@ async function convertToPdf() {
 
       // Fallback: client-side
       if (!serverPdfOk) {
-        await convertSingleFileClientSide(file, convertOptions);
-        successCount++;
+        try {
+          await convertSingleFileClientSide(file, convertOptions);
+          successCount++;
+        } catch (fbErr) {
+          console.error(`Client PDF failed for ${file.name}:`, fbErr.message);
+          showStatus(`❌ فشل تحويل ${file.name}: ${fbErr.message}`, 'error');
+        }
         if (validFiles.length > 1) await new Promise(r => setTimeout(r, 800));
       }
     }
@@ -481,7 +508,13 @@ async function convertSingleFileClientSide(file, convertOptions) {
   if (!parseData.success) throw new Error(parseData.error || 'فشل في التحليل');
 
   const fullHtml = parseData.html;
-  const safeFilename = file.name.replace(/'/g, "\\'");
+
+  // The PDF is rendered inside an isolated iframe (so the document styles apply
+  // cleanly to html2canvas), but the iframe only PRODUCES the PDF bytes and
+  // posts them back to this page. The actual download is triggered here, in the
+  // top-level document — downloads fired from a hidden iframe come out as a
+  // 0-byte file with a garbled name and no .pdf extension.
+  const token = 'pdf_' + Date.now() + '_' + Math.random().toString(36).slice(2);
 
   const pdfScriptTag = `
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"><\/script>
@@ -496,14 +529,17 @@ async function convertSingleFileClientSide(file, convertOptions) {
       });
       const opt = {
         margin: [10, 10, 15, 10],
-        filename: '${safeFilename}.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
-      await html2pdf().set(opt).from(document.body).save();
-    } catch (e) { console.error('Client PDF error:', e); }
+      const blob = await html2pdf().set(opt).from(document.body).outputPdf('blob');
+      const buffer = await blob.arrayBuffer();
+      parent.postMessage({ token: '${token}', ok: true, buffer }, '*');
+    } catch (e) {
+      parent.postMessage({ token: '${token}', ok: false, error: String((e && e.message) || e) }, '*');
+    }
   });
 <\/script>`;
 
@@ -511,8 +547,35 @@ async function convertSingleFileClientSide(file, convertOptions) {
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed; top:0; left:0; width:800px; height:1200px; opacity:0; z-index:-9999; border:none;';
   iframe.srcdoc = modifiedHtml;
-  document.body.appendChild(iframe);
-  setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 30000);
+
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const cleanup = () => {
+      window.removeEventListener('message', onMessage);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    };
+    const onMessage = (ev) => {
+      if (!ev.data || ev.data.token !== token || done) return;
+      done = true;
+      clearTimeout(timer);
+      cleanup();
+      if (ev.data.ok && ev.data.buffer) {
+        const blob = new Blob([ev.data.buffer], { type: 'application/pdf' });
+        downloadBlob(blob, `${file.name}.pdf`);
+        resolve();
+      } else {
+        reject(new Error(ev.data.error || 'فشل إنشاء PDF في المتصفح'));
+      }
+    };
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('انتهت مهلة إنشاء PDF'));
+    }, 45000);
+    window.addEventListener('message', onMessage);
+    document.body.appendChild(iframe);
+  });
 }
 
 function clearInput() {
