@@ -1,7 +1,6 @@
 import { marked } from "marked";
 import hljs from "highlight.js";
 import matter from "gray-matter";
-import puppeteer from "@cloudflare/puppeteer";
 import katex from "katex";
 import plantumlEncoder from "plantuml-encoder";
 
@@ -372,54 +371,39 @@ export function markdownToHtml(
 }
 
 /**
- * Convert HTML to PDF using Cloudflare Browser Rendering
+ * Convert HTML to PDF by delegating to the external Render print service.
+ * Cloudflare builds the HTML; Render runs headless Chromium to print it.
  */
 export async function htmlToPdf(
   html: string,
   options: ConversionOptions = {},
-  browserBinding?: any
+  renderUrl?: string
 ): Promise<Uint8Array> {
-  if (!browserBinding) {
-    throw new Error("BROWSER_NOT_AVAILABLE");
+  if (!renderUrl) {
+    throw new Error("RENDER_URL_NOT_CONFIGURED");
   }
 
-  let browser: any;
+  const endpoint = `${renderUrl.replace(/\/$/, "")}/print`;
+
+  let response: Response;
   try {
-    browser = await puppeteer.launch(browserBinding);
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0", timeout: 30000 });
-
-    const pdfBuffer = await page.pdf({
-      format: options.pageSize || "A4",
-      landscape: options.orientation === "landscape",
-      printBackground: true,
-      margin: {
-        top: options.margin?.top || "20mm",
-        right: options.margin?.right || "15mm",
-        bottom: options.margin?.bottom || "20mm",
-        left: options.margin?.left || "15mm",
-      },
-      displayHeaderFooter: !!(options.headerTemplate || options.footerTemplate),
-      headerTemplate: options.headerTemplate || "<div></div>",
-      footerTemplate:
-        options.footerTemplate ||
-        `<div style="font-size:10px; text-align:center; width:100%; padding:5px 0;">
-          <span class="pageNumber"></span> / <span class="totalPages"></span>
-        </div>`,
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html, options }),
+      signal: AbortSignal.timeout(120000),
     });
-
-    return new Uint8Array(pdfBuffer);
   } catch (error: any) {
-    const errMsg = error?.message || String(error);
-    if (errMsg.includes("429") || errMsg.toLowerCase().includes("rate limit")) {
-      throw new Error("RATE_LIMITED");
-    }
-    throw error;
-  } finally {
-    if (browser) {
-      try { await browser.close(); } catch {}
-    }
+    throw new Error(`RENDER_UNREACHABLE: ${error?.message || String(error)}`);
   }
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`RENDER_ERROR ${response.status}: ${detail}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
 
 /**
@@ -428,7 +412,7 @@ export async function htmlToPdf(
 export async function convertMarkdownToPdf(
   markdown: string,
   options: ConversionOptions = {},
-  browserBinding?: any
+  renderUrl?: string
 ): Promise<ConversionResult> {
   try {
     const { metadata, content } = parseMarkdown(markdown);
@@ -437,7 +421,7 @@ export async function convertMarkdownToPdf(
     // Resolve PlantUML diagrams (fetch SVGs server-side)
     html = await resolvePlantumlDiagrams(html);
 
-    const pdfUint8 = await htmlToPdf(html, options, browserBinding);
+    const pdfUint8 = await htmlToPdf(html, options, renderUrl);
 
     return {
       success: true,
@@ -453,11 +437,11 @@ export async function convertMarkdownToPdf(
         error: "RATE_LIMITED",
       };
     }
-    if (errMsg === "BROWSER_NOT_AVAILABLE") {
+    if (errMsg === "RENDER_URL_NOT_CONFIGURED") {
       return {
         success: false,
         metadata: {},
-        error: "BROWSER_NOT_AVAILABLE",
+        error: "RENDER_URL_NOT_CONFIGURED",
       };
     }
     return {

@@ -1,7 +1,7 @@
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { convertMarkdownToPdf } from "./converter.js";
+import { convertMarkdownToPdf, htmlToPdf } from "./converter.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -12,6 +12,24 @@ app.use(express.text({ type: "text/markdown", limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// Pure HTML -> PDF printer. Used by the Cloudflare frontend (option B):
+// Cloudflare builds the HTML, this service only runs Chromium to print it.
+app.post("/print", async (req, res) => {
+  try {
+    const { html, options = {} } = req.body || {};
+    if (!html || typeof html !== "string") {
+      return res.status(400).json({ error: "html is required" });
+    }
+    const pdf = await htmlToPdf(html, options);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Length", pdf.length);
+    res.end(pdf);
+  } catch (err) {
+    console.error("print error:", err);
+    res.status(500).json({ error: err?.message || "print failed" });
+  }
+});
 
 app.post("/convert", async (req, res) => {
   try {
