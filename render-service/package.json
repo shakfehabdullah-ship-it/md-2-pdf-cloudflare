@@ -1,0 +1,19 @@
+{
+  "name": "md-2-pdf-render",
+  "version": "1.0.0",
+  "description": "Markdown to PDF service (Render / Node + Puppeteer)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.45",
+    "marked": "^17.0.5",
+    "plantuml-encoder": "^1.4.0",
+    "puppeteer": "^23.6.0"
+  }
+}

@@ -1,0 +1,364 @@
+import { marked } from "marked";
+import hljs from "highlight.js";
+import matter from "gray-matter";
+import puppeteer from "puppeteer";
+import katex from "katex";
+import plantumlEncoder from "plantuml-encoder";
+
+// ── KaTeX rendering helper ──────────────────────────────────────────────────
+
+function katexRender(text, displayMode) {
+  try {
+    const rendered = katex.renderToString(text, {
+      displayMode,
+      throwOnError: false,
+      output: "html",
+    });
+    if (displayMode) {
+      return `<div class="math-display">${rendered}</div>`;
+    }
+    return `<span class="math-inline">${rendered}</span>`;
+  } catch {
+    return `<code class="katex-error">${text}</code>`;
+  }
+}
+
+// ── KaTeX Extensions for marked ─────────────────────────────────────────────
+
+const blockKatex = {
+  name: "blockKatex",
+  level: "block",
+  start(src) {
+    return src.match(/^\$\$/m)?.index ?? -1;
+  },
+  tokenizer(src) {
+    const match = src.match(/^(\$\$)\n([\s\S]+?)\n\1(?:\n|$)/);
+    if (match) {
+      return {
+        type: "blockKatex",
+        raw: match[0],
+        text: match[2].trim(),
+        displayMode: true,
+      };
+    }
+    return undefined;
+  },
+  renderer(token) {
+    return katexRender(token.text, token.displayMode);
+  },
+};
+
+const inlineKatex = {
+  name: "inlineKatex",
+  level: "inline",
+  start(src) {
+    return src.indexOf("$");
+  },
+  tokenizer(src) {
+    const displayMatch = src.match(/^(\$\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
+    if (displayMatch) {
+      return {
+        type: "inlineKatex",
+        raw: displayMatch[0],
+        text: displayMatch[2].trim(),
+        displayMode: true,
+      };
+    }
+    const inlineMatch = src.match(/^(\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/);
+    if (inlineMatch) {
+      return {
+        type: "inlineKatex",
+        raw: inlineMatch[0],
+        text: inlineMatch[2].trim(),
+        displayMode: false,
+      };
+    }
+    return undefined;
+  },
+  renderer(token) {
+    return katexRender(token.text, token.displayMode);
+  },
+};
+
+// ── Configure marked ────────────────────────────────────────────────────────
+marked.use({
+  extensions: [blockKatex, inlineKatex],
+  renderer: {
+    heading({ text, depth }) {
+      const id = text
+        .toLowerCase()
+        .replace(/[^\wء-ي]+/g, "-")
+        .replace(/^-|-$/g, "");
+      return `<h${depth} id="${id}">${text}</h${depth}>`;
+    },
+    code({ text, lang }) {
+      if (lang === "plantuml" || lang === "uml") {
+        const encoded = plantumlEncoder.encode(text);
+        const svgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+        return `<div class="plantuml-diagram"><div class="plantuml-header"><span class="plantuml-label">PlantUML</span></div><img src="${svgUrl}" alt="PlantUML Diagram" /></div>`;
+      }
+
+      const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
+      const highlighted = hljs.highlight(text, { language }).value;
+      const langLabel = language !== "plaintext" ? language.toUpperCase() : "CODE";
+      return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-block-lang">${langLabel}</span></div><pre><code class="hljs language-${language}">${highlighted}</code></pre></div>`;
+    },
+  },
+});
+
+export function parseMarkdown(markdownContent) {
+  const { data, content } = matter(markdownContent);
+
+  const metadata = {
+    title: data.title || undefined,
+    author: data.author || undefined,
+    subject: data.subject || undefined,
+    keywords: data.keywords || undefined,
+    createdAt: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+  };
+
+  return { metadata, content };
+}
+
+async function resolvePlantumlDiagrams(html) {
+  const imgRegex = /<img src="(https:\/\/www\.plantuml\.com\/plantuml\/svg\/[^\s"]+)"[^>]*>/g;
+  const matches = [...html.matchAll(imgRegex)];
+
+  if (matches.length === 0) return html;
+
+  const fetches = matches.map(async (match) => {
+    const fullMatch = match[0];
+    const url = match[1];
+    try {
+      const response = await fetch(url, {
+        headers: { Accept: "image/svg+xml" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (response.ok) {
+        let svg = await response.text();
+        svg = svg.replace(/<svg/, '<svg style="max-width:100%;height:auto;"');
+        return { original: fullMatch, replacement: svg };
+      }
+    } catch {}
+    return { original: fullMatch, replacement: fullMatch };
+  });
+
+  const results = await Promise.all(fetches);
+  let resolved = html;
+  for (const { original, replacement } of results) {
+    resolved = resolved.replace(original, replacement);
+  }
+  return resolved;
+}
+
+export function markdownToHtml(markdown, metadata, options = {}) {
+  const htmlBody = marked.parse(markdown);
+
+  const fontSize = options.fontSize || 10;
+  const fontFamily = options.fontFamily || "'Segoe UI', Tahoma, Arial, sans-serif";
+
+  const customCss = options.css || "";
+
+  const dir = options.direction || (options.rtl ? "rtl" : "rtl");
+  const htmlDir = dir === "ltr" ? "ltr" : "rtl";
+  const bodyDir = dir === "ltr" ? "ltr" : "rtl";
+  const textAlign = dir === "ltr" ? "left" : "right";
+
+  const hybridCss = dir === "hybrid" ? `
+    p, li, td, th, blockquote { unicode-bidi: plaintext; direction: auto; text-align: auto; }
+    h1, h2, h3, h4, h5, h6 { unicode-bidi: plaintext; direction: auto; text-align: auto; }
+  ` : "";
+
+  return `<!DOCTYPE html>
+<html lang="ar" dir="${htmlDir}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${metadata.title ? `<title>${metadata.title}</title>` : ""}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&family=Fira+Code:wght@400&display=swap');
+
+    :root {
+      --primary: #1a56db;
+      --text: #1f2937;
+      --bg: #ffffff;
+      --code-bg: #1e293b;
+      --code-header-bg: #0f172a;
+      --code-border: #334155;
+      --code-text: #adbac7;
+      --code-lang-color: #64748b;
+      --border: #e5e7eb;
+      --heading-color: #111827;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: ${fontFamily}, 'Noto Sans Arabic', sans-serif;
+      font-size: ${fontSize}px;
+      line-height: 1.8;
+      color: var(--text);
+      background: var(--bg);
+      direction: ${bodyDir};
+      text-align: ${textAlign};
+      padding: 0;
+    }
+
+    .cover-page {
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      min-height: 90vh; text-align: center; page-break-after: always; padding: 40px;
+    }
+    .cover-page h1 { font-size: 2.5em; color: var(--primary); margin-bottom: 20px; border: none; padding: 0; }
+    .cover-page .meta-info { color: #6b7280; font-size: 1.1em; margin-top: 10px; }
+    .cover-page .divider { width: 120px; height: 3px; background: var(--primary); margin: 30px auto; border-radius: 2px; }
+
+    h1, h2, h3, h4, h5, h6 { color: var(--heading-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; line-height: 1.3; page-break-after: avoid; }
+    h1 { font-size: 1.8em; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    h3 { font-size: 1.25em; }
+
+    p { margin-bottom: 1em; text-align: justify; }
+    a { color: var(--primary); text-decoration: none; border-bottom: 1px dotted var(--primary); }
+    a:hover { border-bottom-style: solid; }
+    strong { color: var(--heading-color); }
+    em { color: #4b5563; }
+
+    ul, ol { margin: 0.8em 0; padding-right: 2em; }
+    li { margin-bottom: 0.4em; }
+
+    pre { background: var(--code-bg, #1e293b); border-radius: 8px; padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 0; border: none; white-space: pre; }
+    pre code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.9em; color: var(--code-text, #adbac7); background: transparent; }
+
+    .hljs { color: #adbac7; }
+    .hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_ { color: #f47067; }
+    .hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_ { color: #dcbdfb; }
+    .hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id, .hljs-variable { color: #6cb6ff; }
+    .hljs-meta .hljs-string, .hljs-regexp, .hljs-string { color: #96d0ff; }
+    .hljs-built_in, .hljs-symbol { color: #f69d50; }
+    .hljs-code, .hljs-comment, .hljs-formula { color: #768390; font-style: italic; }
+    .hljs-name, .hljs-quote, .hljs-selector-pseudo, .hljs-selector-tag { color: #8ddb8c; }
+    .hljs-section { color: #316dca; font-weight: 700; }
+    .hljs-bullet { color: #eac55f; }
+    .hljs-addition { color: #b4f1b4; background-color: #1b4721; }
+    .hljs-deletion { color: #ffd8b3; background-color: #78191b; }
+
+    .code-block-wrapper { margin: 1em 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--code-border, #334155); background: var(--code-bg, #1e293b); page-break-inside: avoid; break-inside: avoid; }
+    .code-block-wrapper pre { margin: 0; border: none; border-radius: 0; }
+    .code-block-header { display: flex; justify-content: space-between; align-items: center; background: var(--code-header-bg, #0f172a); padding: 6px 12px; border-bottom: 1px solid var(--code-border, #334155); }
+    .code-block-lang { font-size: 11px; color: var(--code-lang-color, #64748b); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .plantuml-diagram { margin: 1em 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fafbfc; text-align: center; direction: ltr; page-break-inside: avoid; break-inside: avoid; }
+    .plantuml-header { background: var(--code-header-bg, #1e293b); padding: 6px 12px; display: flex; align-items: center; }
+    .plantuml-label { font-size: 11px; color: var(--code-lang-color, #64748b); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .plantuml-content { padding: 16px; }
+    .plantuml-content svg { max-width: 100%; height: auto; }
+    .plantuml-error { padding: 20px; color: #dc2626; text-align: center; }
+    code { font-family: 'Fira Code', 'Courier New', monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #dc2626; border: 1px solid var(--border); }
+
+    blockquote { border-right: 4px solid var(--primary); margin: 1em 0; padding: 12px 20px; background: #eff6ff; border-radius: 0 8px 8px 0; color: #374151; }
+    blockquote p:last-child { margin-bottom: 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; page-break-inside: avoid; break-inside: avoid; }
+    th { background: var(--primary); color: white; font-weight: 600; padding: 12px 15px; text-align: right; }
+    td { padding: 10px 15px; border-bottom: 1px solid var(--border); }
+    tr:nth-child(even) { background: #f9fafb; }
+    tr:hover { background: #f0f4ff; }
+
+    hr { border: none; height: 2px; background: linear-gradient(to left, transparent, var(--primary), transparent); margin: 2em 0; }
+    img { max-width: 100%; border-radius: 8px; margin: 1em auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+    h1 + *, h2 + *, h3 + * { page-break-before: avoid; break-before: avoid; }
+
+    @media print {
+      body { padding: 0; }
+      .code-block-wrapper, .plantuml-diagram, table { page-break-inside: avoid; break-inside: avoid; }
+      h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+      img { page-break-inside: avoid; }
+    }
+
+    .math-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }
+    .math-inline { direction: ltr; display: inline-block; unicode-bidi: isolate; vertical-align: middle; }
+    .katex-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
+    .katex-display > .katex { text-align: center; }
+    .katex { direction: ltr; }
+    .katex-error { color: #dc2626; background: #fef2f2; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; direction: ltr; display: inline-block; }
+
+    ${hybridCss}
+
+    ${customCss}
+  </style>
+</head>
+<body>
+  ${metadata.title ? `
+  <div class="cover-page">
+    <h1>${metadata.title}</h1>
+    <div class="divider"></div>
+    ${metadata.author ? `<p class="meta-info">المؤلف: ${metadata.author}</p>` : ""}
+    ${metadata.subject ? `<p class="meta-info">${metadata.subject}</p>` : ""}
+    ${metadata.createdAt ? `<p class="meta-info">التاريخ: ${new Date(metadata.createdAt).toLocaleDateString("ar-SA")}</p>` : ""}
+    ${metadata.keywords ? `<p class="meta-info">الكلمات المفتاحية: ${metadata.keywords.join("، ")}</p>` : ""}
+  </div>` : ""}
+  <div class="content">
+    ${htmlBody}
+  </div>
+</body>
+</html>`;
+}
+
+let browserPromise = null;
+
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer.launch({
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    });
+  }
+  return browserPromise;
+}
+
+export async function htmlToPdf(html, options = {}) {
+  const browser = await getBrowser();
+  const page = await browser.newPage();
+  try {
+    await page.setContent(html, { waitUntil: "networkidle0", timeout: 30000 });
+
+    const pdfBuffer = await page.pdf({
+      format: options.pageSize || "A4",
+      landscape: options.orientation === "landscape",
+      printBackground: true,
+      margin: {
+        top: options.margin?.top || "20mm",
+        right: options.margin?.right || "15mm",
+        bottom: options.margin?.bottom || "20mm",
+        left: options.margin?.left || "15mm",
+      },
+      displayHeaderFooter: !!(options.headerTemplate || options.footerTemplate),
+      headerTemplate: options.headerTemplate || "<div></div>",
+      footerTemplate:
+        options.footerTemplate ||
+        `<div style="font-size:10px; text-align:center; width:100%; padding:5px 0;">
+          <span class="pageNumber"></span> / <span class="totalPages"></span>
+        </div>`,
+    });
+
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await page.close();
+  }
+}
+
+export async function convertMarkdownToPdf(markdown, options = {}) {
+  const { metadata, content } = parseMarkdown(markdown);
+  let html = markdownToHtml(content, metadata, options);
+  html = await resolvePlantumlDiagrams(html);
+  const pdf = await htmlToPdf(html, options);
+  return { pdf, metadata };
+}

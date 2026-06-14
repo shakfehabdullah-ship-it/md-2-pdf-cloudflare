@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown → PDF</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; color: #60a5fa; }
+    p.sub { color: #94a3b8; margin-bottom: 20px; font-size: 0.9rem; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    label { font-size: 0.85rem; color: #cbd5e1; }
+    select, input[type=file] { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; }
+    textarea { width: 100%; min-height: 320px; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 0.9rem; direction: ltr; text-align: left; }
+    button { background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 12px 28px; font-size: 1rem; cursor: pointer; margin-top: 14px; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    .status { margin-top: 12px; font-size: 0.9rem; min-height: 1.2em; }
+    .status.err { color: #f87171; }
+    .status.ok { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Markdown → PDF</h1>
+    <p class="sub">الصق الـ Markdown أو ارفع ملف ‎.md‎، واضغط تحويل.</p>
+
+    <div class="row">
+      <label>اتجاه:
+        <select id="direction">
+          <option value="rtl">RTL (عربي)</option>
+          <option value="ltr">LTR (إنجليزي)</option>
+          <option value="hybrid">Hybrid (تلقائي)</option>
+        </select>
+      </label>
+      <label>الحجم:
+        <select id="pageSize">
+          <option value="A4">A4</option>
+          <option value="Letter">Letter</option>
+          <option value="Legal">Legal</option>
+        </select>
+      </label>
+      <label>ملف: <input type="file" id="file" accept=".md,.markdown,.txt"></label>
+    </div>
+
+    <textarea id="md" placeholder="# عنوان&#10;&#10;اكتب الماركداون هنا..."></textarea>
+    <button id="go">تحويل إلى PDF</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    $("file").addEventListener("change", async (e) => {
+      const f = e.target.files[0];
+      if (f) $("md").value = await f.text();
+    });
+
+    $("go").addEventListener("click", async () => {
+      const markdown = $("md").value;
+      const status = $("status");
+      if (!markdown.trim()) { status.className = "status err"; status.textContent = "أدخل markdown أولاً."; return; }
+
+      $("go").disabled = true;
+      status.className = "status";
+      status.textContent = "جارٍ التحويل...";
+
+      try {
+        const resp = await fetch("/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            markdown,
+            options: { direction: $("direction").value, pageSize: $("pageSize").value },
+          }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || ("HTTP " + resp.status));
+        }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "document.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        status.className = "status ok";
+        status.textContent = "تم! تحقق من التنزيلات.";
+      } catch (err) {
+        status.className = "status err";
+        status.textContent = "خطأ: " + err.message;
+      } finally {
+        $("go").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
