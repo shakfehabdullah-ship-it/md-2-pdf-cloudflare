@@ -1,19 +1,24 @@
 {
   "name": "md-2-pdf-cloudflare",
-  "version": "2.0.0",
-  "description": "MD to PDF converter - Cloudflare Workers Edition",
-  "main": "src/index.ts",
+  "version": "2.1.0",
+  "description": "MD to PDF converter - Cloudflare Workers Edition (with remote MCP server)",
+  "main": "functions/api/[[path]].ts",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:migrate": "wrangler d1 execute md2pdf-db --file=./src/db/schema.sql",
-    "db:migrate:local": "wrangler d1 execute md2pdf-db --local --file=./src/db/schema.sql",
-    "build": "npx wrangler deploy --dry-run --outdir=dist"
+    "db:migrate": "wrangler d1 execute md2pdf-db --file=./functions/db/migrations.sql",
+    "db:migrate:local": "wrangler d1 execute md2pdf-db --local --file=./functions/db/migrations.sql",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "pages:build": "npx wrangler pages functions build --outdir dist",
+    "pages:deploy": "npx wrangler pages deploy ./public --project-name md-2-pdf",
+    "mcp:list-tools": "node scripts/list-mcp-tools.mjs"
   },
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.5.0",
     "@cloudflare/puppeteer": "^0.0.15",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "bcryptjs": "^3.0.3",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",

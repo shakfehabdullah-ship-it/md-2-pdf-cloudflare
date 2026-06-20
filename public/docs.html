@@ -355,119 +355,134 @@
 
       <!-- ═══════════════════ أدوات MCP ═══════════════════ -->
       <section id="mcp-tools">
-        <h2>🤖 أدوات MCP المتاحة</h2>
-        <p>خادم MCP يوفر 3 أدوات للذكاء الاصطناعي لتحويل Markdown إلى PDF مباشرة:</p>
+        <h2>🤖 خادم MCP (عن بُعد على Cloudflare)</h2>
+        <div class="info-box primary" style="margin-bottom: 20px;">
+          <strong>نقطة النهاية الوحيدة:</strong>
+          <code>https://md-2-pdf.pages.dev/mcp</code>
+          <br>
+          <span>خادم MCP يعمل مباشرةً على Cloudflare Pages عبر <strong>Streamable HTTP</strong> — لا حاجة لتثبيت Node.js أو استنساخ المشروع أو بنائه محلياً. أي عميل MCP متوافق يتصل بهذا الرابط فقط.</span>
+        </div>
+
+        <p>الخادم يوفّر 5 أدوات للذكاء الاصطناعي لتحويل Markdown والتحكم بسجل التحويلات:</p>
 
         <div class="mcp-tool-card">
           <div class="mcp-tool-header">
             <span class="mcp-tool-name">convert-markdown-to-pdf</span>
             <span class="mcp-tool-badge">تحويل مباشر</span>
           </div>
-          <p>تحويل نص Markdown إلى ملف PDF.</p>
+          <p>تحويل نص Markdown إلى ملف PDF (Base64). يدعم: frontmatter، تلوين الكود، رياضيات KaTeX، رسوم PlantUML، تخطيطات عربية/RTL.</p>
           <table class="params-table compact">
             <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
             <tbody>
               <tr><td><code>markdown</code></td><td>string</td><td>نص Markdown (مطلوب)</td></tr>
-              <tr><td><code>title</code></td><td>string</td><td>عنوان المستند</td></tr>
-              <tr><td><code>pageSize</code></td><td>string</td><td>A4 | Letter | Legal</td></tr>
-              <tr><td><code>filename</code></td><td>string</td><td>اسم الملف الناتج</td></tr>
+              <tr><td><code>pageSize</code></td><td>enum</td><td>A4 | Letter | Legal</td></tr>
+              <tr><td><code>orientation</code></td><td>enum</td><td>portrait | landscape</td></tr>
+              <tr><td><code>direction</code></td><td>enum</td><td>rtl | ltr | hybrid</td></tr>
+              <tr><td><code>fontSize</code></td><td>number</td><td>حجم الخط (8–24)</td></tr>
+              <tr><td><code>css</code></td><td>string</td><td>CSS إضافي</td></tr>
+              <tr><td><code>margin</code></td><td>object</td><td>{ top, right, bottom, left }</td></tr>
+              <tr><td><code>filename</code></td><td>string</td><td>اسم الملف المقترح</td></tr>
+              <tr><td><code>saveToHistory</code></td><td>boolean</td><td>حفظ في السجل (يتطلب auth)</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="mcp-tool-card">
           <div class="mcp-tool-header">
-            <span class="mcp-tool-name">convert-markdown-file-to-pdf</span>
-            <span class="mcp-tool-badge">ملف</span>
-          </div>
-          <p>قراءة ملف Markdown من القرص وتحويله إلى PDF.</p>
-          <table class="params-table compact">
-            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
-            <tbody>
-              <tr><td><code>filePath</code></td><td>string</td><td>مسار الملف (مطلوب)</td></tr>
-              <tr><td><code>title</code></td><td>string</td><td>عنوان المستند</td></tr>
-              <tr><td><code>pageSize</code></td><td>string</td><td>A4 | Letter | Legal</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mcp-tool-card">
-          <div class="mcp-tool-header">
-            <span class="mcp-tool-name">parse-markdown-metadata</span>
+            <span class="mcp-tool-name">parse-markdown</span>
             <span class="mcp-tool-badge">تحليل</span>
           </div>
-          <p>استخراج البيانات الوصفية (Frontmatter) من Markdown بدون تحويل.</p>
+          <p>تحويل Markdown إلى HTML منسّق + استخراج الـ frontmatter. لا يستخدم الشبكة (سريع جداً).</p>
           <table class="params-table compact">
             <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
             <tbody>
               <tr><td><code>markdown</code></td><td>string</td><td>نص Markdown (مطلوب)</td></tr>
+              <tr><td colspan="3"><em>+ نفس خيارات التحويل أعلاه (pageSize, direction, …)</em></td></tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">list-documents</span>
+            <span class="mcp-tool-badge">سجل</span>
+          </div>
+          <p>عرض المستندات المحوّلة سابقاً للمستخدم أو الجلسة الضيف. يتطلب auth.</p>
+          <table class="params-table compact">
+            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
+            <tbody>
+              <tr><td><code>limit</code></td><td>number</td><td>عدد النتائج (1–200)</td></tr>
+              <tr><td><code>offset</code></td><td>number</td><td>ترقيم الصفحات</td></tr>
+              <tr><td><code>search</code></td><td>string</td><td>بحث في العناوين</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">get-document</span>
+            <span class="mcp-tool-badge">سجل</span>
+          </div>
+          <p>جلب مستند واحد بالكامل (Markdown + metadata) عبر معرّفه الرقمي.</p>
+          <table class="params-table compact">
+            <thead><tr><th>المعامل</th><th>النوع</th><th>الوصف</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>number</td><td>معرّف المستند (مطلوب)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mcp-tool-card">
+          <div class="mcp-tool-header">
+            <span class="mcp-tool-name">create-guest-session</span>
+            <span class="mcp-tool-badge">auth</span>
+          </div>
+          <p>إنشاء جلسة ضيف UUID لحفظ التحويلات بدون تسجيل حساب. استخدم الناتج في <code>_meta.auth.guestSessionId</code>.</p>
         </div>
       </section>
 
       <!-- ═══════════════════ إعداد MCP ═══════════════════ -->
       <section id="mcp-setup">
-        <h2>⚙️ إعداد MCP</h2>
-        <p>انسخ الإعداد المناسب لأداتك وأضفه لملف الإعدادات:</p>
+        <h2>⚙️ إعداد MCP (Remote — URL واحد)</h2>
+        <p>كل عميل MCP يحتاج فقط إضافة الرابط <code>https://md-2-pdf.pages.dev/mcp</code> — لا تثبيت، لا استنساخ، لا بناء.</p>
 
         <div class="info-box primary" style="margin-bottom: 20px;">
-          <strong>قبل البدء:</strong> ثبّت المشروع محلياً:
-          <div class="code-block" style="margin-top: 8px; margin-bottom: 0;">
+          <strong>🔑 المصادقة (اختياري):</strong> لتشغيل <code>saveToHistory</code> أو <code>list-documents</code>، مرّر أحد هذه في <code>_meta.auth</code>:
+          <ul style="margin: 8px 0 0 20px; padding: 0;">
+            <li><code>{ "token": "&lt;JWT&gt;" }</code> — من <code>POST /api/auth/login</code></li>
+            <li><code>{ "guestSessionId": "&lt;UUID&gt;" }</code> — أنشئه بأداة <code>create-guest-session</code></li>
+          </ul>
+        </div>
+
+        <div class="mcp-card claude">
+          <h3><span class="mcp-icon" style="background:#d97706">C</span> Claude Desktop / Claude Code</h3>
+          <div class="config-path">~/Library/Application Support/Claude/claude_desktop_config.json (macOS) · %APPDATA%\Claude\claude_desktop_config.json (Windows)</div>
+          <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-            <pre><code>git clone https://github.com/shakfehabdullah-ship-it/md-2-pdf-cloudflare.git
-cd md-2-pdf-cloudflare
-npm install
-npm run build</code></pre>
+            <pre><code>{
+  "mcpServers": {
+    "md-2-pdf": {
+      "url": "https://md-2-pdf.pages.dev/mcp"
+    }
+  }
+}</code></pre>
+          </div>
+          <div class="config-path" style="margin-top: 8px;">أو عبر Claude Code CLI:</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+            <pre><code>claude mcp add --transport http md-2-pdf https://md-2-pdf.pages.dev/mcp</code></pre>
           </div>
         </div>
 
         <div class="mcp-card antigravity">
-          <h3><span class="mcp-icon" style="background:#9b59b6">A</span> Antigravity (Gemini CLI)</h3>
+          <h3><span class="mcp-icon" style="background:#9b59b6">A</span> Antigravity / Gemini CLI</h3>
           <div class="config-path">~/.gemini/settings.json</div>
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
             <pre><code>{
   "mcpServers": {
     "md-2-pdf": {
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
-    }
-  }
-}</code></pre>
-          </div>
-        </div>
-
-        <div class="mcp-card claude">
-          <h3><span class="mcp-icon" style="background:#d97706">C</span> Claude Code</h3>
-          <div class="config-path">سطر الأوامر أو ~/.config/claude/mcp.json</div>
-          <div class="code-block">
-            <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-            <pre><code># عبر الأمر
-claude mcp add md-2-pdf -- node &lt;md-2-pdf-path&gt;/dist/mcp/server.js
-
-# أو يدوياً في ~/.config/claude/mcp.json
-{
-  "mcpServers": {
-    "md-2-pdf": {
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
-    }
-  }
-}</code></pre>
-          </div>
-        </div>
-
-        <div class="mcp-card gemini">
-          <h3><span class="mcp-icon" style="background:#27ae60">G</span> Gemini CLI</h3>
-          <div class="config-path">~/.gemini/settings.json</div>
-          <div class="code-block">
-            <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-            <pre><code>{
-  "mcpServers": {
-    "md-2-pdf": {
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
+      "url": "https://md-2-pdf.pages.dev/mcp"
     }
   }
 }</code></pre>
@@ -475,16 +490,15 @@ claude mcp add md-2-pdf -- node &lt;md-2-pdf-path&gt;/dist/mcp/server.js
         </div>
 
         <div class="mcp-card kilo">
-          <h3><span class="mcp-icon" style="background:#f39c12">K</span> Kilo Code</h3>
-          <div class="config-path">~/.config/kilo/kilo.jsonc</div>
+          <h3><span class="mcp-icon" style="background:#f39c12">K</span> Kilo Code / Cline / Continue</h3>
+          <div class="config-path">~/.config/kilo/kilo.jsonc · أو إعدادات الـ IDE</div>
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
             <pre><code>{
   "mcp": {
     "md-2-pdf": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
+      "type": "http",
+      "url": "https://md-2-pdf.pages.dev/mcp"
     }
   }
 }</code></pre>
@@ -499,9 +513,8 @@ claude mcp add md-2-pdf -- node &lt;md-2-pdf-path&gt;/dist/mcp/server.js
             <pre><code>{
   "mcp": {
     "md-2-pdf": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
+      "type": "http",
+      "url": "https://md-2-pdf.pages.dev/mcp"
     }
   }
 }</code></pre>
@@ -514,8 +527,8 @@ claude mcp add md-2-pdf -- node &lt;md-2-pdf-path&gt;/dist/mcp/server.js
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
             <pre><code>[mcp_servers.md-2-pdf]
-command = "node"
-args = ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]</code></pre>
+type = "http"
+url = "https://md-2-pdf.pages.dev/mcp"</code></pre>
           </div>
         </div>
 
@@ -527,8 +540,7 @@ args = ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]</code></pre>
             <pre><code>{
   "mcpServers": {
     "md-2-pdf": {
-      "command": "node",
-      "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]
+      "url": "https://md-2-pdf.pages.dev/mcp"
     }
   }
 }</code></pre>
@@ -536,66 +548,60 @@ args = ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"]</code></pre>
         </div>
 
         <div class="mcp-card generic">
-          <h3><span class="mcp-icon" style="background:#34495e">*</span> أي أداة MCP أخرى</h3>
+          <h3><span class="mcp-icon" style="background:#34495e">*</span> أي عميل MCP متوافق</h3>
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
             <pre><code>{
-  "command": "node",
-  "args": ["&lt;md-2-pdf-path&gt;/dist/mcp/server.js"],
-  "transport": "stdio"
+  "md-2-pdf": {
+    "transport": "streamable-http",
+    "url": "https://md-2-pdf.pages.dev/mcp"
+  }
 }</code></pre>
           </div>
         </div>
 
-        <div class="info-box warning" style="margin-top: 20px;">
-          <strong>⚠️ ملاحظة:</strong> استبدل <code>&lt;md-2-pdf-path&gt;</code> بالمسار الفعلي على جهازك. خادم MCP يحوّل الطلبات تلقائياً إلى <code>https://md-2-pdf.pages.dev/api</code> — لا حاجة لتشغيل خادم محلي.
+        <div class="info-box success" style="margin-top: 20px;">
+          <strong>✅ لماذا Remote؟</strong>
+          <ul style="margin: 8px 0 0 20px; padding: 0;">
+            <li>الذكاء الاصطناعي يتصل مباشرة بـ Cloudflare — زمن استجابة عالمي منخفض.</li>
+            <li>لا حاجة لـ Node.js على جهاز المستخدم.</li>
+            <li>التحديثات تنطبق فوراً على كل العملاء.</li>
+            <li>التشفير عبر HTTPS، CORS مفتوح للاستخدام من المتصفح.</li>
+          </ul>
         </div>
       </section>
 
       <!-- ═══════════════════ اختبار MCP ═══════════════════ -->
       <section id="mcp-test">
         <h2>🧪 اختبار MCP</h2>
-        <p>بعد إعداد MCP، يمكنك اختباره بإرسال طلب JSON-RPC مباشرة:</p>
+        <p>كل طلب MCP هو عبارة عن JSON-RPC 2.0 عبر POST. جرّب مباشرةً بـ <code>curl</code>:</p>
 
-        <h3>اختبار عبر stdin</h3>
+        <h3>1) سرد الأدوات المتاحة</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-          <pre><code>echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node &lt;md-2-pdf-path&gt;/dist/mcp/server.js</code></pre>
+          <pre><code>curl -X POST https://md-2-pdf.pages.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'</code></pre>
         </div>
 
-        <h3>النتيجة المتوقعة</h3>
+        <h3>2) تحويل Markdown إلى PDF</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-          <pre><code>{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "tools": [
-      {
-        "name": "convert-markdown-to-pdf",
-        "description": "تحويل نص Markdown إلى PDF",
-        "inputSchema": { ... }
-      },
-      {
-        "name": "convert-markdown-file-to-pdf",
-        "description": "تحويل ملف Markdown إلى PDF",
-        "inputSchema": { ... }
-      },
-      {
-        "name": "parse-markdown-metadata",
-        "description": "استخراج البيانات الوصفية من Markdown",
-        "inputSchema": { ... }
-      }
-    ]
-  }
-}</code></pre>
+          <pre><code>curl -X POST https://md-2-pdf.pages.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"convert-markdown-to-pdf","arguments":{"markdown":"# مرحباً\\nهذا **اختبار** من MCP","direction":"rtl"}}}'</code></pre>
         </div>
 
-        <h3>اختبار تحويل مباشر</h3>
+        <h3>3) فحص نص FYI</h3>
         <div class="code-block">
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
-          <pre><code>echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"convert-markdown-to-pdf","arguments":{"markdown":"# Test\nHello **world**!","title":"Test Document"}}}' | node &lt;md-2-pdf-path&gt;/dist/mcp/server.js</code></pre>
+          <pre><code>curl https://md-2-pdf.pages.dev/mcp</code></pre>
         </div>
+        <p>سيعيد JSON تعريفي يصف الخدمة (مفيد للتأكد أن الخادم حيّ).</p>
       </section>
     </main>
   </div>

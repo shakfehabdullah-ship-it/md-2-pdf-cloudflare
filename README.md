@@ -1,208 +1,206 @@
-# MD-2-PDF
+# md-2-pdf-cloudflare
 
-أداة لتحويل ملفات Markdown إلى PDF مع دعم اللغة العربية واتجاه RTL.
+> محوّل Markdown → PDF مع دعم كامل للعربية/RTL، مُستضاف على **Cloudflare Pages** + **D1** + خدمة Render خارجية لرسم PDF عبر Chromium.
 
-## المميزات
+رابط الإنتاج: <https://md-2-pdf.pages.dev>
 
-- تحويل Markdown إلى PDF بجودة عالية
-- دعم كامل للغة العربية واتجاه RTL
-- واجهة ويب تفاعلية مع محرر CodeMirror
-- معاينة مباشرة للـ Markdown
-- خيارات تنسيق متعددة (حجم الصفحة، الهوامش، اتجاه الصفحة)
-- حفظ تلقائي للمسودات في localStorage
-- MCP Server للتكامل مع Claude CLI
-- REST API للتكامل مع التطبيقات الأخرى
+---
 
-## التثبيت
+## ✨ المميزات
+
+- 📝 **محرك تحويل غني**: frontmatter، تلوين كود (GitHub-Dark-Dimmed)، رياضيات KaTeX (`$...$` / `$$...$$`)، رسوم PlantUML، جداول، اقتباسات.
+- 🌍 **دعم RTL كامل**: تخطيطات `rtl` / `ltr` / `hybrid` (تلقائي حسب الفقرة) للنصوص العربية/المختلطة.
+- 🎨 **CSS احترافي للطباعة**: صفحة غلاف، فواصل صفحات، `print-color-adjust: exact`.
+- 🧠 **خادم MCP عن بُعد** — أي عميل MCP (Claude، Cursor، Cline، Gemini CLI، Codex، …) يتصل بـ `https://md-2-pdf.pages.dev/mcp`.
+- 🔐 **مصادقة JWT** + جلسات ضيف مجهولة لحفظ السجل في D1.
+- 🚀 **REST API** كامل عبر Hono / Pages Functions.
+
+---
+
+## 🏗️ البنية
+
+```
+md-2-pdf-cloudflare/
+├── functions/                     # Cloudflare Pages Functions (API + MCP)
+│   ├── api/[[path]].ts            #   catch-all REST API
+│   ├── mcp/[[route]].ts           #   ← Remote MCP server (Streamable HTTP)
+│   ├── mcp/tools.ts               #   ← MCP tool registrations
+│   ├── routes/{auth,convert,history}.ts
+│   ├── engine/converter.ts        #   Markdown → HTML
+│   ├── middleware/auth.ts         #   JWT + guest-session
+│   ├── db/                        #   D1 helpers + models + migrations.sql
+│   └── types/env.d.ts             #   Cloudflare Env bindings
+├── public/                        # Static frontend
+│   ├── index.html                 #   Converter UI
+│   ├── docs.html                  #   API + MCP docs
+│   ├── history.html
+│   └── {css,js}/…
+├── render-service/                # Separate Express + Puppeteer service (Render.com)
+│   ├── server.js
+│   └── converter.js
+├── scripts/list-mcp-tools.mjs     # Local introspection helper
+├── test_mcp.cjs                   # HTTP-based MCP test harness
+├── wrangler.toml
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+## 🚀 التطوير المحلي
 
 ```bash
 npm install
+npm run dev      # wrangler dev على http://localhost:3000
 ```
 
-## البناء والتشغيل
+تحتاج إلى:
+- Cloudflare account + `wrangler login`
+- قاعدة D1 باسم `md2pdf-db` (انظر `wrangler.toml`)
+- خدمة Render لطباعة PDF (متغيّر `RENDER_PDF_URL`)
 
-### البناء
+### سكريبتات npm
 
-```bash
-npm run build
+| Script | الوظيفة |
+|---|---|
+| `npm run dev` | تشغيل محلي عبر wrangler |
+| `npm run build` | فحص أنواع TypeScript (`tsc --noEmit`) |
+| `npm run typecheck` | نفس المفعوب |
+| `npm run pages:build` | بناء Pages Functions bundle |
+| `npm run pages:deploy` | نشر `./public` على Pages |
+| `npm run db:migrate` | تنفيذ ترحيلات D1 (إنتاج) |
+| `npm run db:migrate:local` | تنفيذ الترحيلات محلياً |
+| `npm run mcp:list-tools` | استعراض أدوات MCP المسجّلة محلياً |
+
+---
+
+## 🔌 REST API
+
+كل المسارات تحت `/api`:
+
+| Method | Path | الوصف |
+|---|---|---|
+| `GET` | `/api/health` | فحص الصحة |
+| `GET` | `/api/docs` | قائمة endpoints |
+| `POST` | `/api/convert` | Markdown → PDF (base64) + حفظ في السجل |
+| `POST` | `/api/convert/base64` | Markdown → PDF (base64 فقط) |
+| `POST` | `/api/parse` | Markdown → HTML + metadata |
+| `POST` | `/api/auth/register` | إنشاء حساب → JWT |
+| `POST` | `/api/auth/login` | تسجيل دخول → JWT |
+| `POST` | `/api/auth/guest` | إنشاء UUID جلسة ضيف |
+| `GET` | `/api/auth/me` | المستخدم الحالي |
+| `GET` | `/api/history` | قائمة المستندات |
+| `GET` | `/api/history/:id` | مستند واحد |
+| `GET` | `/api/history/stats/summary` | إحصائيات |
+| `DELETE` | `/api/history/:id` | حذف مستند |
+
+---
+
+## 🤖 خادم MCP (Remote)
+
+الخادم يعمل على Cloudflare Pages عبر **Streamable HTTP transport** (stateless). لا حاجة لتثبيت أي شيء محلياً — فقط أضف هذا الـ URL لأي عميل MCP:
+
+```
+https://md-2-pdf.pages.dev/mcp
 ```
 
-### التشغيل (API Server)
+### الأدوات الخمس
 
-```bash
-npm start
-```
+| Tool | الوصف |
+|---|---|
+| `convert-markdown-to-pdf` | تحويل Markdown → PDF (base64). يدعم جميع خيارات `ConversionOptions`. |
+| `parse-markdown` | تحويل Markdown → HTML + استخراج frontmatter (بدون PDF). |
+| `list-documents` | قائمة السجل (يتطلب auth في `_meta.auth`). |
+| `get-document` | جلب مستند عبر ID. |
+| `create-guest-session` | توليد UUID جلسة ضيف. |
 
-سيتم تشغيل الخادم على `http://localhost:3000`
+### أمثلة الإعداد
 
-### التطوير
-
-```bash
-npm run dev
-```
-
-### تشغيل MCP Server
-
-```bash
-npm run mcp
-```
-
-## نقاط النهاية API
-
-### GET `/`
-واجهة الويب التفاعلية.
-
-### GET `/api/health`
-فحص صحة الخادم.
-
-### POST `/api/convert`
-تحويل Markdown إلى PDF.
-
-```json
-{
-  "markdown": "# مرحبا بالعالم\n\nهذا اختبار.",
-  "options": {
-    "title": "عنوان المستند",
-    "author": "المؤلف",
-    "pageSize": "A4",
-    "orientation": "portrait",
-    "margins": {
-      "top": 20,
-      "bottom": 20,
-      "left": 15,
-      "right": 15
-    },
-    "rtl": true,
-    "generateToc": false,
-    "coverPage": false
-  }
-}
-```
-
-**الاستجابة:** PDF binary
-
-### POST `/api/convert/base64`
-تحويل Markdown إلى PDF (base64).
-
-**الاستجابة:**
-```json
-{
-  "success": true,
-  "message": "Conversion successful",
-  "metadata": {
-    "title": "عنوان المستند",
-    "author": "المؤلف"
-  },
-  "pdfBase64": "JVBERi0xLjQKJ..."
-}
-```
-
-### POST `/api/convert/file`
-تحويل Markdown وحفظ PDF على الخادم.
-
-### POST `/api/parse`
-تحليل Markdown واستخراج البيانات الوصفية مع معاينة HTML.
-
-```json
-{
-  "markdown": "---\ntitle: عنوان\nauthor: المؤلف\n---\n# المحتوى"
-}
-```
-
-**الاستجابة:**
-```json
-{
-  "success": true,
-  "metadata": {
-    "title": "عنوان",
-    "author": "المؤلف"
-  },
-  "html": "<h1>المحتوى</h1>"
-}
-```
-
-## MCP Server (Model Context Protocol)
-
-الخادم MCP يوفر الأدوات التالية للتكامل مع تطبيقات LLM:
-
-### الأدوات المتاحة
-
-1. **convert-markdown-to-pdf**: تحويل نص Markdown إلى PDF
-2. **convert-markdown-file-to-pdf**: تحويل ملف Markdown إلى PDF
-3. **parse-markdown-metadata**: استخراج البيانات الوصفية من Markdown
-
-### التكامل مع Claude Desktop
-
-أضف التالي إلى ملف إعدادات Claude Desktop:
-
+**Claude Desktop / Cursor / Cline:**
 ```json
 {
   "mcpServers": {
-    "md-2-pdf": {
-      "command": "node",
-      "args": ["/path/to/md-2-pdf/dist/mcp/server.js"]
-    }
+    "md-2-pdf": { "url": "https://md-2-pdf.pages.dev/mcp" }
   }
 }
 ```
 
-## خيارات التحويل
+**Claude Code CLI:**
+```bash
+claude mcp add --transport http md-2-pdf https://md-2-pdf.pages.dev/mcp
+```
 
-| الخيار | النوع | القيمة الافتراضية | الوصف |
-|--------|------|------------------|--------|
-| `title` | string | من الـ front matter | عنوان المستند |
-| `author` | string | من الـ front matter | المؤلف |
-| `pageSize` | string | `"A4"` | حجم الصفحة (A4, Letter, Legal) |
-| `orientation` | string | `"portrait"` | الاتجاه (portrait, landscape) |
-| `margins` | object | `{top: 20, bottom: 20, left: 15, right: 15}` | الهوامش بالمليمتر |
-| `rtl` | boolean | `true` | دعم RTL |
-| `generateToc` | boolean | `false` | إنشاء فهرس تلقائي |
-| `coverPage` | boolean | `false` | إضافة صفحة غلاف |
+**Codex (`~/.codex/config.toml`):**
+```toml
+[mcp_servers.md-2-pdf]
+type = "http"
+url = "https://md-2-pdf.pages.dev/mcp"
+```
 
-## Front Matter
+### الاختبار
 
-يمكن تحديد البيانات الوصفية في أعلى ملف Markdown:
+```bash
+# ضد الإنتاج
+node test_mcp.cjs
 
-```markdown
+# ضد wrangler dev محلياً
+MCP_URL=http://localhost:3000/mcp node test_mcp.cjs
+```
+
+توثيق تفصيلي (بالعربية): <https://md-2-pdf.pages.dev/docs#mcp-setup>
+
 ---
-title: عنوان المستند
-author: اسم المؤلف
-date: 2024-01-01
+
+## 🔐 المصادقة في MCP
+
+أدوات `saveToHistory` و `list-documents` تحتاج إلى auth. مرّر إحداهما في `_meta.auth` عند استدعاء الأداة:
+
+```jsonc
+// JWT من /api/auth/login
+{ "_meta": { "auth": { "token": "<JWT>" } } }
+
+// أو UUID جلسة ضيف من create-guest-session
+{ "_meta": { "auth": { "guestSessionId": "<UUID>" } } }
+```
+
 ---
 
-# المحتوى يبدأ هنا
+## 🛠️ خيارات التحويل
+
+```ts
+interface ConversionOptions {
+  pageSize?: "A4" | "Letter" | "Legal";
+  orientation?: "portrait" | "landscape";
+  margin?: { top?: string; right?: string; bottom?: string; left?: string };
+  fontSize?: number;        // 8..24
+  fontFamily?: string;
+  headerTemplate?: string;  // Puppeteer header HTML
+  footerTemplate?: string;  // Puppeteer footer HTML
+  css?: string;             // Extra CSS injected
+  title?: string;
+  rtl?: boolean;
+  direction?: "rtl" | "ltr" | "hybrid";
+  theme?: string;
+}
 ```
 
-## البنية
+---
 
-```
-md-2-pdf/
-├── src/
-│   ├── index.ts          # Entry point
-│   ├── engine/
-│   │   ├── converter.ts  # منطق التحويل الأساسي
-│   │   └── index.ts     # الصادرات
-│   ├── api/
-│   │   └── server.ts    # خادم Express REST API
-│   └── mcp/
-│       └── server.ts    # خادم MCP
-├── public/
-│   ├── index.html       # واجهة الويب
-│   ├── css/
-│   │   └── style.css    # الأنماط
-│   └── js/
-│       └── app.js       # JavaScript
-├── package.json
-├── tsconfig.json
-└── README.md
+## 📦 النشر
+
+```bash
+# 1) تأكد من أن D1 مربوط في wrangler.toml
+# 2) ثبّت JWT_SECRET كـ Pages secret
+wrangler pages secret put JWT_SECRET
+
+# 3) حدّث RENDER_PDF_URL في wrangler.toml لخدمة Render الحقيقية
+
+# 4) انشر
+npm run pages:deploy
 ```
 
-## المتطلبات
+---
 
-- Node.js 18+
-- npm أو yarn
-- Puppeteer (للتحويل إلى PDF)
-
-## الترخيص
+## 📄 الرخصة
 
 MIT
