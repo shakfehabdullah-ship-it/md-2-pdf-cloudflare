@@ -275,6 +275,24 @@ export function markdownToHtml(markdown, metadata, options = {}) {
       .code-block-wrapper, .plantuml-diagram, table { page-break-inside: avoid; break-inside: avoid; }
       h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
       img { page-break-inside: avoid; }
+
+      /* ── Fix: thin white hairlines under code blocks in the PDF ──
+         Chromium anti-aliases background-box edges onto fractional device
+         pixels at the print scale (96→72dpi), leaving near-white seams. */
+      .code-block-wrapper {
+        background: var(--code-bg, #1e293b) !important;
+        box-shadow: 0 0 0 1px var(--code-bg, #1e293b);
+      }
+      .code-block-wrapper pre {
+        background: transparent !important;
+        overflow: visible !important;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      .code-block-header {
+        box-shadow: 0 0 0 1px var(--code-header-bg, #0f172a);
+      }
     }
 
     .math-display { direction: ltr; text-align: center; margin: 1em 0; overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }

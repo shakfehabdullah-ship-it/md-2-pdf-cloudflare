@@ -339,6 +339,32 @@ export function markdownToHtml(
       h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
       img { page-break-inside: avoid; }
       pre, code { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      /* ── Fix: thin white hairlines under code blocks in the PDF ──
+         Chromium rasterizes background-box edges at the print scale
+         (96→72dpi = 0.75x) onto fractional device pixels and anti-aliases
+         the seam to a near-white line. Only happens in print, not on screen. */
+
+      /* (1) Paint the whole block on ONE background box → no internal seams.
+             Any leftover seam now reveals the dark bg, never page-white. */
+      .code-block-wrapper {
+        background: var(--code-bg, #1e293b) !important;
+        /* bleed the bg 1px past the anti-aliased outer edge to cover the seam */
+        box-shadow: 0 0 0 1px var(--code-bg, #1e293b);
+      }
+      .code-block-wrapper pre {
+        background: transparent !important;
+        /* (2) no scroll container → no clip seam; wrap since a PDF can't scroll
+               (also prevents long lines from being silently cropped) */
+        overflow: visible !important;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      /* (3) cover the header↕pre boundary the same way */
+      .code-block-header {
+        box-shadow: 0 0 0 1px var(--code-header-bg, #0f172a);
+      }
     }
 
     /* KaTeX styling */
