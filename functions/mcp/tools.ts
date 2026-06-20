@@ -127,7 +127,7 @@ export function createMcpServer(env: Env): McpServer {
       const result = await convertMarkdownToPdf(
         markdown,
         options as any,
-        env.RENDER_PDF_URL
+        env.MYBROWSER
       );
 
       if (!result.success) {

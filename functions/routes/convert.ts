@@ -19,7 +19,7 @@ convert.post("/convert", async (c) => {
       return c.json({ success: false, error: "محتوى Markdown مطلوب" }, 400);
     }
 
-    const result = await convertMarkdownToPdf(markdown, options, c.env.RENDER_PDF_URL);
+    const result = await convertMarkdownToPdf(markdown, options, c.env.MYBROWSER);
 
     if (!result.success) {
       // If browser rate-limited, return HTML fallback with helpful message
@@ -84,7 +84,7 @@ convert.post("/convert/base64", async (c) => {
       return c.json({ success: false, error: "محتوى Markdown مطلوب" }, 400);
     }
 
-    const result = await convertMarkdownToPdf(markdown, options, c.env.RENDER_PDF_URL);
+    const result = await convertMarkdownToPdf(markdown, options, c.env.MYBROWSER);
 
     if (!result.success) {
       return c.json({ success: false, error: result.error }, 500);
