@@ -286,7 +286,7 @@ export function markdownToHtml(
     ul, ol { margin: 0.8em 0; padding-right: 2em; }
     li { margin-bottom: 0.4em; }
 
-    pre { background: var(--code-bg, #1e293b); border-radius: 8px; padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 0; border: none; white-space: pre; }
+    pre { background: var(--code-bg, #1e293b); padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 0; border: none; white-space: pre; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     pre code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.9em; color: var(--code-text, #adbac7); background: transparent; }
 
     /* highlight.js token colors (GitHub Dark Dimmed) */
@@ -304,9 +304,9 @@ export function markdownToHtml(
     .hljs-deletion { color: #ffd8b3; background-color: #78191b; }
 
     /* Code block wrapper with header */
-    .code-block-wrapper { margin: 1em 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--code-border, #334155); background: var(--code-bg, #1e293b); page-break-inside: avoid; break-inside: avoid; }
+    .code-block-wrapper { margin: 1em 0; border: 1px solid var(--code-border, #334155); background: var(--code-bg, #1e293b); page-break-inside: avoid; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .code-block-wrapper pre { margin: 0; border: none; border-radius: 0; }
-    .code-block-header { display: flex; justify-content: space-between; align-items: center; background: var(--code-header-bg, #0f172a); padding: 6px 12px; border-bottom: 1px solid var(--code-border, #334155); }
+    .code-block-header { display: flex; justify-content: space-between; align-items: center; background: var(--code-header-bg, #0f172a); padding: 6px 12px; border-bottom: 1px solid var(--code-border, #334155); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .code-block-lang { font-size: 11px; color: var(--code-lang-color, #64748b); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* PlantUML diagrams */
@@ -316,7 +316,7 @@ export function markdownToHtml(
     .plantuml-content { padding: 16px; }
     .plantuml-content svg { max-width: 100%; height: auto; }
     .plantuml-error { padding: 20px; color: #dc2626; text-align: center; }
-    code { font-family: 'Fira Code', 'Courier New', monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #dc2626; border: 1px solid var(--border); }
+    code { font-family: 'Fira Code', 'Courier New', monospace; background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #1f2937; border: 1px solid #d1d5db; direction: ltr; unicode-bidi: isolate; }
 
     blockquote { border-right: 4px solid var(--primary); margin: 1em 0; padding: 12px 20px; background: #eff6ff; border-radius: 0 8px 8px 0; color: #374151; }
     blockquote p:last-child { margin-bottom: 0; }
@@ -335,9 +335,10 @@ export function markdownToHtml(
 
     @media print {
       body { padding: 0; }
-      .code-block-wrapper, .plantuml-diagram, table { page-break-inside: avoid; break-inside: avoid; }
+      .code-block-wrapper, .plantuml-diagram, table { page-break-inside: avoid; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
       img { page-break-inside: avoid; }
+      pre, code { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 
     /* KaTeX styling */

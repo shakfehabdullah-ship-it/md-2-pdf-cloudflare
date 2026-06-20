@@ -132,15 +132,15 @@
 
 /* ═══ Inline code ═══ */
 .preview-content code:not(pre code) {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: #e5e7eb;
+  color: #1f2937;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Fira Code', 'Consolas', monospace;
   font-size: 0.88em;
   direction: ltr;
-  unicode-bidi: embed;
-  border: 1px solid #334155;
+  unicode-bidi: isolate;
+  border: 1px solid #d1d5db;
 }
 
 /* ═══ Scrollbar ═══ */
