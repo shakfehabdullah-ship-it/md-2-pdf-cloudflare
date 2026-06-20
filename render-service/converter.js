@@ -281,6 +281,7 @@ export function markdownToHtml(markdown, metadata, options = {}) {
          pixels at the print scale (96→72dpi), leaving near-white seams. */
       .code-block-wrapper {
         background: var(--code-bg, #1e293b) !important;
+        border: none !important;
         box-shadow: 0 0 0 1px var(--code-bg, #1e293b);
       }
       .code-block-wrapper pre {

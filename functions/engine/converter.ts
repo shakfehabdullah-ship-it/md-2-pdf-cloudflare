@@ -349,6 +349,7 @@ export function markdownToHtml(
              Any leftover seam now reveals the dark bg, never page-white. */
       .code-block-wrapper {
         background: var(--code-bg, #1e293b) !important;
+        border: none !important;            /* remove the gray frame box (PDF only) */
         /* bleed the bg 1px past the anti-aliased outer edge to cover the seam */
         box-shadow: 0 0 0 1px var(--code-bg, #1e293b);
       }
