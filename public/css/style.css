@@ -305,6 +305,26 @@ body {
   color: inherit;
 }
 
+/* KaTeX / math — keep equations LTR inside the RTL preview (mirrors the PDF styles).
+   The preview strips the server <style>, so without these the RTL container
+   reverses the equation (e.g. "E=mc²" rendered right-to-left). */
+.preview-content .katex,
+.preview-content .katex-display,
+.preview-content .math-inline,
+.preview-content .math-display {
+  direction: ltr;
+}
+.preview-content .math-inline {
+  display: inline-block;
+  unicode-bidi: isolate;
+  vertical-align: middle;
+}
+.preview-content .math-display,
+.preview-content .katex-display {
+  text-align: center;
+  margin: 1em 0;
+}
+
 .preview-content table {
   width: 100%;
   border-collapse: collapse;

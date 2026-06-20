@@ -342,30 +342,38 @@ export function markdownToHtml(
       pre, code { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
       /* ── Fix: thin white hairlines under code blocks in the PDF ──
-         Chromium rasterizes background-box edges at the print scale
-         (96→72dpi = 0.75x) onto fractional device pixels and anti-aliases
-         the seam to a near-white line. Only happens in print, not on screen. */
-
-      /* (1) Paint the whole block on ONE background box → no internal seams.
-             Any leftover seam now reveals the dark bg, never page-white. */
+         Chromium anti-aliases background-box edges onto fractional device
+         pixels at the print scale, leaving near-white seams (worse on some
+         Chromium builds, e.g. Cloudflare Browser Rendering). Robust fix:
+         paint the dark background as ONE solid layer via a pseudo-element that
+         is 1px larger than the block and sits behind the content, so no edge
+         gap can ever reveal the white page. Does not rely on box-shadows being
+         printed. */
       .code-block-wrapper {
+        position: relative;
+        z-index: 0;                          /* own stacking context for ::before */
         background: var(--code-bg, #1e293b) !important;
-        border: none !important;            /* remove the gray frame box (PDF only) */
-        /* bleed the bg 1px past the anti-aliased outer edge to cover the seam */
-        box-shadow: 0 0 0 1px var(--code-bg, #1e293b);
+        border: none !important;             /* no gray frame box */
+        overflow: visible !important;
+      }
+      .code-block-wrapper::before {
+        content: "";
+        position: absolute;
+        top: -1px; right: -1px; bottom: -1px; left: -1px;  /* bleed past every edge */
+        z-index: -1;                         /* behind the code, above the page */
+        background: var(--code-bg, #1e293b);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .code-block-header {
+        background: var(--code-header-bg, #0f172a) !important;
       }
       .code-block-wrapper pre {
-        background: transparent !important;
-        /* (2) no scroll container → no clip seam; wrap since a PDF can't scroll
-               (also prevents long lines from being silently cropped) */
-        overflow: visible !important;
-        white-space: pre-wrap;
+        background: transparent !important;  /* show the continuous dark layer */
+        overflow: visible !important;        /* no scroll-clip seam */
+        white-space: pre-wrap;               /* wrap (a PDF can't scroll) */
         word-break: break-word;
         overflow-wrap: anywhere;
-      }
-      /* (3) cover the header↕pre boundary the same way */
-      .code-block-header {
-        box-shadow: 0 0 0 1px var(--code-header-bg, #0f172a);
       }
     }
 
