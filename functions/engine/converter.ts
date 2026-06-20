@@ -288,7 +288,11 @@ export function markdownToHtml(
     li { margin-bottom: 0.4em; }
 
     pre { background: var(--code-bg, #1e293b); padding: 16px; overflow-x: auto; direction: ltr; text-align: left; margin: 0; border: none; white-space: pre; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    pre code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.9em; color: var(--code-text, #adbac7); background: transparent; }
+    /* Reset the inline-<code> styling so it does NOT leak into block code.
+       <code> inside <pre> is inline and spans many lines; the inherited
+       1px border was drawn around every line fragment → thin white lines
+       under each line of code in the PDF. */
+    pre code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 0.9em; color: var(--code-text, #adbac7); background: transparent; border: none; padding: 0; border-radius: 0; unicode-bidi: normal; }
 
     /* highlight.js token colors (GitHub Dark Dimmed) */
     .hljs { color: #adbac7; }
