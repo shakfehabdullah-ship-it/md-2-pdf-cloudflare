@@ -20,10 +20,10 @@ router.post("/register", async (c) => {
     }
     await UserModel.create(c.env.DB, username, email, password, displayName);
     const user = (await UserModel.findByEmail(c.env.DB, email))!;
-    const token = signToken({ userId: user.id, username: user.username, email: user.email });
+    const token = signToken({ userId: user.id, username: user.username, email: user.email }, c.env);
     return c.json({ success: true, token, user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name } });
-  } catch {
-    return c.json({ success: false, error: "خطأ في التسجيل" }, 500);
+  } catch (e: any) {
+    return c.json({ success: false, error: "خطأ في التسجيل: " + (e?.message || String(e)) }, 500);
   }
 });
 
@@ -35,10 +35,10 @@ router.post("/login", async (c) => {
     const valid = await UserModel.verifyPassword(user, password);
     if (!valid) return c.json({ success: false, error: "بريد أو كلمة مرور خاطئة" }, 401);
     await UserModel.updateLastLogin(c.env.DB, user.id);
-    const token = signToken({ userId: user.id, username: user.username, email: user.email });
+    const token = signToken({ userId: user.id, username: user.username, email: user.email }, c.env);
     return c.json({ success: true, token, user: { id: user.id, username: user.username, email: user.email, displayName: user.display_name } });
-  } catch {
-    return c.json({ success: false, error: "خطأ في تسجيل الدخول" }, 500);
+  } catch (e: any) {
+    return c.json({ success: false, error: "خطأ في تسجيل الدخول: " + (e?.message || String(e)) }, 500);
   }
 });
 

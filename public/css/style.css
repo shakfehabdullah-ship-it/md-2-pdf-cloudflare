@@ -534,6 +534,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  gap: 4px;
 }
 
 .header-links {
@@ -814,4 +815,103 @@ body {
 
 .file-page-btn.active .page-num {
   background: rgba(255,255,255,0.25);
+}
+
+/* Logout Button */
+.btn-logout {
+  background: rgba(231, 76, 60, 0.15) !important;
+  color: #6b7280 !important;
+  border: 1px solid rgba(231, 76, 60, 0.3) !important;
+  margin-right: 4px !important;
+}
+.btn-logout:hover {
+  background: rgba(231, 76, 60, 0.25) !important;
+}
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+  border: none;
+}
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+/* Language Toggle & Header Right */
+.header-right {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* Language Dropdown */
+.lang-dropdown {
+  position: relative;
+}
+.lang-dropdown-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+.lang-dropdown-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
+.lang-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 120px;
+}
+.lang-dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+  text-align: left;
+  color: #2c3e50;
+  transition: background 0.15s;
+}
+.lang-dropdown-menu button:hover {
+  background: #f0f4f8;
+}
+/* User Dropdown Menu */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 140px;
+}
+.user-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+  text-align: center;
+  color: #6b7280;
+  transition: background 0.15s;
+}
+.user-dropdown-item:hover {
+  background: #f3f4f6;
 }
