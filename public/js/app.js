@@ -420,7 +420,9 @@ async function convertToPdf() {
       try {
         const headers = { 'Content-Type': 'application/json' };
         const state = typeof getAuthState === 'function' ? getAuthState() : {};
-        if (state.isGuest && state.guestSession) {
+        if (state.isLoggedIn && state.token) {
+          headers['Authorization'] = `Bearer ${state.token}`;
+        } else if (state.isGuest && state.guestSession) {
           headers['x-guest-session'] = state.guestSession;
         }
 

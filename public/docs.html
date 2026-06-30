@@ -14,6 +14,8 @@
       <div class="sidebar-section">عام</div>
       <a href="#overview" class="active">نظرة عامة</a>
       <a href="#features">المميزات</a>
+      <a href="#languages">تعدد اللغات</a>
+      <a href="#accounts">الحسابات</a>
       <a href="#auth">المصادقة</a>
 
       <div class="sidebar-section">API</div>
@@ -25,6 +27,9 @@
       <a href="#auth-login">POST /api/auth/login</a>
       <a href="#auth-guest">POST /api/auth/guest</a>
       <a href="#history-api">GET /api/history</a>
+
+      <div class="sidebar-section">المطورين</div>
+      <a href="#skill">OpenClaw Skill</a>
 
       <div class="sidebar-section">أدوات MCP</div>
       <a href="#mcp-tools">أدوات MCP المتاحة</a>
@@ -350,6 +355,127 @@
           <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
           <pre><code>curl https://md-2-pdf.pages.dev/api/history?limit=10 \
   -H "Authorization: Bearer &lt;token&gt;"</code></pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ اللغات ═══════════════════ -->
+      <section id="languages">
+        <h2>🌍 تعدد اللغات</h2>
+        <p>الموقع يدعم لغتين: <strong>العربية</strong> (افتراضي) و<strong>English</strong>.</p>
+
+        <div class="info-box primary">
+          <strong>التبديل:</strong> استخدم القائمة المنسدلة 🌐 أعلى الصفحة. اللغة المحفوظة في المتصفح.
+        </div>
+
+        <h3>الميزات حسب اللغة</h3>
+        <ul>
+          <li>تبديل كامل لكل النصوص (عناوين، أزرار، مساعدات)</li>
+          <li>تبديل اتجاه الصفحة (RTL ↔ LTR) تلقائياً</li>
+          <li>تبديل اتجاه محرر النص</li>
+          <li>تبديل أزرار الاتجاه (RTL/LTR) لتتطابق اللغة</li>
+        </ul>
+      </section>
+
+      <!-- ═══════════════════ الحسابات والسجلات ═══════════════════ -->
+      <section id="accounts">
+        <h2>👤 الحسابات والسجلات</h2>
+        <p>أنشئ حساباً لحفظ سجلات تحويلاتك أو تابع كضيف.</p>
+
+        <h3>أنواع المستخدمين</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>النوع</th><th>المميزات</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>مسجل</strong></td><td>حفظ دائم في السحابة، الوصول من أي جهاز</td></tr>
+            <tr><td><strong>ضيف</strong></td><td>حفظ محلي في المتصفح فقط</td></tr>
+          </tbody>
+        </table>
+
+        <h3>كيفية الاستخدام</h3>
+        <ol>
+          <li>اضغط <strong>🔑 تسجيل الدخول</strong> أعلى الصفحة</li>
+          <li>أنشئ حساباً أو سجل دخول</li>
+          <li>حوّل أي ملف Markdown إلى PDF</li>
+          <li>ستجد سجلاتك في صفحة <strong>📋 السجلات</strong></li>
+        </ol>
+
+        <div class="info-box success">
+          <strong>نصيحة:</strong> يمكنك فتح أي مستند سابق من السجلات وتعديله وإعادة تحويله.
+        </div>
+      </section>
+
+      <!-- ═══════════════════ OpenClaw Skill ═══════════════════ -->
+      <section id="skill">
+        <h2>🦾 OpenClaw Skill</h2>
+        <p>MD-2-PDF متاح كـ <strong>AgentSkill</strong> لأي ذكاء اصطناعي يدعم OpenClaw (Claude, Gemini, Codex, Cursor، وأكثر).</p>
+
+        <div class="info-box primary">
+          <strong>الملف:</strong> <code>SKILL.md</code> في المستودع
+          <br><strong>الوصف:</strong> تحويل Markdown إلى PDF مع دعم RTL والعربية
+        </div>
+
+        <h3>المميزات الموثقة بالـ Skill</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>الميزة</th><th>الوصف</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>تحويل سريع</strong></td><td>Markdown → PDF عبر API أو MCP</td></tr>
+            <tr><td><strong>RTL وعربي</strong></td><td>دعم كامل للاتجاه من اليمين لليسار</td></tr>
+            <tr><td><strong>LaTeX</strong></td><td>معادلات رياضية سطرية وعرضية</td></tr>
+            <tr><td><strong>تلوين الأكواد</strong></td><td>GitHub Dark Dimmed theme</td></tr>
+            <tr><td><strong>PlantUML</strong></td><td>مخططات مباشرة في المستند</td></tr>
+            <tr><td><strong>ثيمات</strong></td><td>5 ثيمات: أزرق، أحمر، أخضر، بنفسجي، ذهبي</td></tr>
+            <tr><td><strong>MCP Server</strong></td><td>5 أدوات للتكامل المباشر</td></tr>
+          </tbody>
+        </table>
+
+        <h3>خيارات التحويل</h3>
+        <table class="params-table">
+          <thead>
+            <tr><th>الخيار</th><th>القيم</th><th>الافتراضي</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>direction</code></td><td><code>rtl | ltr | hybrid</code></td><td><code>rtl</code></td></tr>
+            <tr><td><code>theme</code></td><td><code>blue | red | green | purple | gold</code></td><td><code>blue</code></td></tr>
+            <tr><td><code>pageSize</code></td><td><code>A4 | Letter | Legal</code></td><td><code>A4</code></td></tr>
+            <tr><td><code>orientation</code></td><td><code>portrait | landscape</code></td><td><code>portrait</code></td></tr>
+            <tr><td><code>fontSize</code></td><td><code>8–24</code></td><td><code>10</code></td></tr>
+            <tr><td><code>css</code></td><td>CSS إضافي</td><td>—</td></tr>
+          </tbody>
+        </table>
+
+        <h3>طرق الاستخدام</h3>
+        <div class="mcp-card blue">
+          <h4>1️⃣ MCP Server (للـ AI Agents)</h4>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+            <pre><code>https://md-2-pdf.pages.dev/mcp</code></pre>
+          </div>
+        </div>
+
+        <div class="mcp-card green">
+          <h4>2️⃣ REST API</h4>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">نسخ</button>
+            <pre><code>POST https://md-2-pdf.pages.dev/api/convert
+Content-Type: application/json
+
+{
+  "markdown": "# مرحبا\n**نص عربي**",
+  "options": { "direction": "rtl", "theme": "blue" }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="mcp-card purple">
+          <h4>3️⃣ الواجهة (Web UI)</h4>
+          <p>زر <a href="/">https://md-2-pdf.pages.dev</a> — اكتب أو ارفع Markdown، عاين، وحمّل PDF.</p>
+        </div>
+
+        <div class="info-box success">
+          <strong>ملف SKILL.md:</strong> متوفر في <a href="https://github.com/shakfehabdullah-ship-it/md-2-pdf-cloudflare/blob/main/SKILL.md" target="_blank">GitHub Repository</a>
         </div>
       </section>
 

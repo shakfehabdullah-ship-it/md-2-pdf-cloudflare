@@ -1,8 +1,11 @@
 import { Hono } from "hono";
+import { optionalAuth } from "../middleware/auth.js";
 import { DocumentModel } from "../db/models/document.js";
 import type { Env } from "../types/env.js";
 
 const history = new Hono<{ Bindings: Env }>();
+
+history.use("*", optionalAuth);
 
 // List documents for the authenticated user or guest session
 history.get("/", async (c) => {

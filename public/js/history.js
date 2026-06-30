@@ -6,7 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
   searchInput = document.getElementById("searchInput");
   statsContainer = document.getElementById("statsContainer");
 
-  loadHistory();
+  // Small delay to ensure auth.js is ready
+  setTimeout(loadHistory, 100);
 
   if (searchInput) {
     searchInput.addEventListener("input", debounce(loadHistory, 300));
@@ -24,7 +25,7 @@ function debounce(fn, delay) {
 async function loadHistory() {
   if (!historyContainer) return;
 
-  const state = getAuthState();
+  const state = typeof getAuthState === "function" ? getAuthState() : {};
   const search = searchInput ? searchInput.value.trim() : "";
 
   let documents = [];
@@ -44,7 +45,12 @@ async function loadHistory() {
         documents = data.documents;
       }
     } catch (err) {
-      documents = [];
+      historyContainer.innerHTML = `
+        <div class="empty-state">
+          <p>فشل تحميل السجلات. حاول مرة أخرى.</p>
+        </div>
+      `;
+      return;
     }
 
     loadStats(state.token);
@@ -184,7 +190,10 @@ async function loadStats(token) {
 
 async function openDocument(id) {
   const s = state();
-  if (!s.isLoggedIn) return;
+  if (!s.isLoggedIn) {
+    alert("يجب تسجيل الدخول");
+    return;
+  }
 
   try {
     const res = await fetch(`/api/history/${id}`, {
@@ -200,10 +209,12 @@ async function openDocument(id) {
         "md2pdf_restore_filename",
         data.document.filename || "مستندي"
       );
-      window.location.href = "/";
+      window.location.href = "/?restore=1";
+    } else {
+      alert(data.error || "فشل تحميل المستند");
     }
   } catch (err) {
-    alert("فشل تحميل المستند");
+    alert("فشل تحميل المستند: " + err.message);
   }
 }
 
