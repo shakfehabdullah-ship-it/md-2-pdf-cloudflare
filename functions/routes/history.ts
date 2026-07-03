@@ -10,7 +10,7 @@ history.use("*", optionalAuth);
 // List documents for the authenticated user or guest session
 history.get("/", async (c) => {
   const userId = c.get("userId") as number | undefined;
-  const guestId = c.get("guestSessionId") as string | undefined;
+  const guestId = (c.get("guestSessionId") as string | undefined) || c.req.header("x-guest-session") || undefined;
   const limit = Number(c.req.query("limit")) || 50;
   const offset = Number(c.req.query("offset")) || 0;
   const search = c.req.query("search");

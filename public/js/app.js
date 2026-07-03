@@ -422,8 +422,8 @@ async function convertToPdf() {
         const state = typeof getAuthState === 'function' ? getAuthState() : {};
         if (state.isLoggedIn && state.token) {
           headers['Authorization'] = `Bearer ${state.token}`;
-        } else if (state.isGuest && state.guestSession) {
-          headers['x-guest-session'] = state.guestSession;
+        } else if (state.isGuest && state.guestId) {
+          headers['x-guest-session'] = state.guestId;
         }
 
         const convertResponse = await fetch('/api/convert', {

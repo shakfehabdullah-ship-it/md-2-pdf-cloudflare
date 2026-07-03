@@ -45,7 +45,7 @@ export const DocumentModel = {
   async findByUserId(db: D1Database, userId: number, limit = 50, offset = 0) {
     return db
       .prepare(
-        `SELECT id, title, filename, markdown_size, pdf_size, pdf_generated,
+        `SELECT id, title, filename, markdown_content, markdown_size, pdf_size, pdf_generated,
           theme, created_at, updated_at
          FROM documents WHERE user_id = ?
          ORDER BY created_at DESC LIMIT ? OFFSET ?`
@@ -57,7 +57,7 @@ export const DocumentModel = {
   async findByGuestSession(db: D1Database, sessionId: string, limit = 50, offset = 0) {
     return db
       .prepare(
-        `SELECT id, title, filename, markdown_size, pdf_size, pdf_generated,
+        `SELECT id, title, filename, markdown_content, markdown_size, pdf_size, pdf_generated,
           theme, created_at, updated_at
          FROM documents WHERE guest_session_id = ?
          ORDER BY created_at DESC LIMIT ? OFFSET ?`

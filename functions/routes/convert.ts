@@ -56,7 +56,8 @@ convert.post("/convert", async (c) => {
           page_size: options.pageSize || "A4",
           orientation: options.orientation || "portrait",
         });
-      } catch {
+      } catch (dbError) {
+        console.error("D1 history save failed:", dbError);
         // History save failure shouldn't block the response
       }
     }
